@@ -1,6 +1,44 @@
+# ── Build output ──────────────────────────────────────────────────────────────
 .next/
+out/
+
+# ── Dependencies ──────────────────────────────────────────────────────────────
 node_modules/
+
+# ── Local data store ──────────────────────────────────────────────────────────
 .data/
-.env.local
+
+# ── Environment variables ─────────────────────────────────────────────────────
 .env
+.env.local
+.env.*.local
+
+# ── TypeScript build cache ────────────────────────────────────────────────────
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# ── OS artefacts ──────────────────────────────────────────────────────────────
 .DS_Store
+Thumbs.db
+
+# ── AI assistant config directories ───────────────────────────────────────────
+# These are installed by various AI coding tools and contain only local tooling
+# config; they should never be committed to the repository.
+.agents/
+.augment/
+.claude/
+.codebuddy/
+.codewhale/
+.continue/
+.cursor/
+.factory/
+.gemini/
+.github/
+.kilocode/
+.kiro/
+.opencode/
+.qoder/
+.roo/
+.trae/
+.warp/
+.windsurf/
