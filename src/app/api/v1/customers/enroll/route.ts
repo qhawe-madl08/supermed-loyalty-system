@@ -3,6 +3,15 @@ import { createCustomer } from '@/services/customer/customer.repository';
 import { assignCard } from '@/services/cards/card.repository';
 import { readStore } from '@/lib/data-store';
 
+export async function GET() {
+  const store = await readStore();
+  return NextResponse.json({
+    message: 'Use POST to enroll a customer',
+    customer_count: store.customers.length,
+    available_cards: store.cards.filter((card) => card.status === 'AVAILABLE').length,
+  });
+}
+
 export async function POST(request: Request) {
   const body = await request.json();
   const store = await readStore();

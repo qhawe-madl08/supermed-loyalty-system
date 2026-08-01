@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createPurchaseTransaction, createRedemptionTransaction } from '@/services/transactions/transaction.repository';
+import { createPurchaseTransaction, createRedemptionTransaction, listTransactions } from '@/services/transactions/transaction.repository';
 import { updateCustomerBalance } from '@/services/customer/customer.repository';
 import { readStore } from '@/lib/data-store';
+
+export async function GET() {
+  const transactions = await listTransactions();
+  return NextResponse.json({ transactions });
+}
 
 export async function POST(request: Request) {
   const body = await request.json();

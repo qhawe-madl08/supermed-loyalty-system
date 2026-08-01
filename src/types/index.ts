@@ -3,6 +3,17 @@ export interface SettingsRecord {
   currency: string;
 }
 
+export interface CustomerRecord {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string | null;
+  points_balance: number;
+  card_id?: string | null;
+  created_at: string;
+}
+
 export interface CardRecord {
   id: string;
   card_number: string;
