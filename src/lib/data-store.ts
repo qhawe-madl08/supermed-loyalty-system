@@ -11,6 +11,23 @@ export interface LoyaltyStore {
 
 const storePath = path.join(process.cwd(), '.data', 'loyalty-store.json');
 
+function deriveCustomerBalances(store: LoyaltyStore): LoyaltyStore {
+  const balances = new Map<string, number>();
+
+  for (const transaction of store.transactions) {
+    const currentBalance = balances.get(transaction.customer_id) ?? 0;
+    balances.set(transaction.customer_id, currentBalance + transaction.points);
+  }
+
+  return {
+    ...store,
+    customers: store.customers.map((customer) => ({
+      ...customer,
+      points_balance: balances.get(customer.id) ?? 0,
+    })),
+  };
+}
+
 function createDefaultStore(): LoyaltyStore {
   return {
     settings: {
@@ -37,12 +54,13 @@ async function ensureStoreFile(): Promise<void> {
 export async function readStore(): Promise<LoyaltyStore> {
   await ensureStoreFile();
   const raw = await fs.readFile(storePath, 'utf8');
-  return JSON.parse(raw) as LoyaltyStore;
+  return deriveCustomerBalances(JSON.parse(raw) as LoyaltyStore);
 }
 
 export async function writeStore(store: LoyaltyStore): Promise<void> {
   await ensureStoreFile();
-  await fs.writeFile(storePath, JSON.stringify(store, null, 2));
+  const normalizedStore = deriveCustomerBalances(store);
+  await fs.writeFile(storePath, JSON.stringify(normalizedStore, null, 2));
 }
 
 export async function resetStore(): Promise<void> {

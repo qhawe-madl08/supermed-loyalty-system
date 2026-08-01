@@ -35,7 +35,7 @@ export async function findCustomerByPhone(phone: string): Promise<CustomerRecord
   return store.customers.find((customer) => customer.phone === phone);
 }
 
-export async function updateCustomerBalance(customerId: string, balance: number): Promise<void> {
+export async function getCurrentCustomerBalance(customerId: string): Promise<number> {
   const store = await readStore();
   const customer = store.customers.find((entry) => entry.id === customerId);
 
@@ -43,6 +43,5 @@ export async function updateCustomerBalance(customerId: string, balance: number)
     throw new Error('Customer not found');
   }
 
-  customer.points_balance = balance;
-  await writeStore(store);
+  return customer.points_balance;
 }
