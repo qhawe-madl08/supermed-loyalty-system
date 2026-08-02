@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { readStore } from '@/lib/data-store';
+import { listCustomers } from '@/services/customer/customer.repository';
 import { recordTransaction } from '@/app/actions/transaction-actions';
+import type { LegacyCustomerRecord } from '@/types';
 
 export default async function TransactionPage() {
-  const store = await readStore();
-  const customers = [...store.customers].sort((a, b) =>
+  const customers = (await listCustomers()).sort((a, b) =>
     `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)
   );
 
@@ -27,7 +27,7 @@ export default async function TransactionPage() {
               Customer
               <select name="customer_id" required className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2">
                 <option value="">Select a customer</option>
-                {customers.map((customer) => (
+                {customers.map((customer: LegacyCustomerRecord) => (
                   <option key={customer.id} value={customer.id}>
                     {customer.first_name} {customer.last_name} ({customer.phone}) — {customer.points_balance} pts
                   </option>

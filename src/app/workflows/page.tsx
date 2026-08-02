@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { readStore } from '@/lib/data-store';
+import { listCustomers } from '@/services/customer/customer.repository';
 import { formatCustomerName } from '@/lib/workflow';
+import type { LegacyCustomerRecord } from '@/types';
 
 export default async function WorkflowsPage() {
-  const store = await readStore();
-  const recentCustomers = [...store.customers].slice(-6).reverse();
+  const recentCustomers = (await listCustomers()).slice(-6).reverse();
 
   return (
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900 sm:p-8">
@@ -26,7 +26,7 @@ export default async function WorkflowsPage() {
               {recentCustomers.length === 0 ? (
                 <p className="text-sm text-slate-500">No customers have been enrolled yet.</p>
               ) : (
-                recentCustomers.map((customer) => (
+                recentCustomers.map((customer: LegacyCustomerRecord) => (
                   <div key={customer.id} className="flex items-center justify-between rounded-xl border border-slate-200 p-3">
                     <div>
                       <p className="font-medium">{formatCustomerName(customer)}</p>
