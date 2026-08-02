@@ -1,46 +1,60 @@
 # Supermed Pharmacy Loyalty MVP
 
-This project implements a lean staff-facing loyalty workflow for Supermed Pharmacy.
+Staff-facing loyalty system for Supermed Pharmacy: register customers, assign
+physical loyalty cards, record purchases, award points, and redeem them.
 
-## What is included
+## Data backends
 
-- Card registration and assignment
-- Customer enrollment
-- Purchase points accrual with configurable multiplier
-- Redemption flow with balance protection
-- Simple dashboard and health endpoint
-- JSON-backed local data store for fast local development
+Every read and write goes through one repository interface (`src/lib/db`), with
+two interchangeable implementations:
+
+| `DATA_BACKEND` | Storage | Use |
+|---|---|---|
+| `json` | `.data/loyalty-store.json` | local development only — writes to disk, so it cannot run on Vercel |
+| `supabase` | Supabase Postgres | production source of truth |
+
+If `DATA_BACKEND` is unset, the app uses Supabase when `NEXT_PUBLIC_SUPABASE_URL`
+and `SUPABASE_SERVICE_ROLE_KEY` are present, and the JSON store otherwise.
 
 ## Run locally
 
-1. Install dependencies
-   ```bash
-   npm install
-   ```
-2. Seed the local data store
-   ```bash
-   npm run seed
-   ```
-3. Start the app
-   ```bash
-   npm run dev
-   ```
-4. Open the dashboard at http://localhost:3000/dashboard
+```bash
+npm install
+cp .env.example .env.local   # DATA_BACKEND=json is enough for local work
+npm run seed                 # loads 20 sample cards (SM000001…) into the JSON store
+npm run dev
+```
+
+Open http://localhost:3000.
+
+## Checks
+
+```bash
+npm run build
+npm run lint
+npm test
+```
+
+## Points
+
+`points = floor(purchase amount × points_multiplier)`, multiplier default `1`
+(so `$42.75` earns `42` points). The multiplier is stored per environment: in
+`app_settings` on Supabase, in the JSON file locally.
 
 ## Key endpoints
 
-- GET /api/v1/health
-- POST /api/v1/cards
-- GET /api/v1/customers
-- POST /api/v1/customers
-- GET /api/v1/customers/[id]
-- POST /api/v1/transactions
-- POST /api/v1/redemptions
-- GET /api/v1/settings
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/v1/health` | backend status and record counts |
+| GET/POST | `/api/v1/cards` | list card inventory / load new card numbers |
+| GET/POST | `/api/v1/customers` | list or look up by phone / register |
+| GET | `/api/v1/customers/search?q=` | search by name, phone, or card number |
+| GET | `/api/v1/customers/[id]` | profile plus transaction history |
+| GET | `/api/v1/customers/[id]/balance` | current points balance |
+| GET/POST | `/api/v1/transactions` | history / record purchase or redemption |
+| POST | `/api/v1/redemptions` | redeem points |
+| GET/POST | `/api/v1/settings` | read or change the points multiplier |
 
-## Example workflow
+## Deployment
 
-1. Register cards with POST /api/v1/cards
-2. Enroll a customer with POST /api/v1/customers
-3. Record a purchase with POST /api/v1/transactions
-4. Redeem points with POST /api/v1/redemptions
+See `docs/DEPLOYMENT_GUIDE.md` for the Supabase and Vercel setup steps.

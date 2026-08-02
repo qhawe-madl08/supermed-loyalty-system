@@ -1,12 +1,12 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import type { CardRecord, CustomerRecord, SettingsRecord, TransactionRecord } from '../types';
+import type { Card, Customer, Settings, Transaction } from '@/types';
 
 export interface LoyaltyStore {
-  settings: SettingsRecord;
-  cards: CardRecord[];
-  customers: CustomerRecord[];
-  transactions: TransactionRecord[];
+  settings: Settings;
+  cards: Card[];
+  customers: Customer[];
+  transactions: Transaction[];
 }
 
 const storePath = path.join(process.cwd(), '.data', 'loyalty-store.json');
@@ -19,16 +19,24 @@ function deriveCustomerBalances(store: LoyaltyStore): LoyaltyStore {
     balances.set(transaction.customer_id, currentBalance + transaction.points);
   }
 
+  const cardsByCustomer = new Map<string, string>();
+  for (const card of store.cards) {
+    if (card.customer_id) {
+      cardsByCustomer.set(card.customer_id, card.id);
+    }
+  }
+
   return {
     ...store,
     customers: store.customers.map((customer) => ({
       ...customer,
       points_balance: balances.get(customer.id) ?? 0,
+      card_id: cardsByCustomer.get(customer.id) ?? null,
     })),
   };
 }
 
-function createDefaultStore(): LoyaltyStore {
+export function createDefaultStore(): LoyaltyStore {
   return {
     settings: {
       points_multiplier: 1,

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { readStore } from '@/lib/data-store';
+import { getRepository } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const store = await readStore();
-  return NextResponse.json({ entries: store.transactions, count: store.transactions.length });
+  const transactions = await getRepository().listTransactions(100);
+  return NextResponse.json({ entries: transactions, count: transactions.length });
 }

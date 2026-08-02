@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { readStore } from '@/lib/data-store';
+import { getRepository } from '@/lib/db';
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
-  const store = await readStore();
-  const customer = store.customers.find((entry) => entry.id === params.id);
+  const repository = getRepository();
+  const customer = await repository.getCustomer(params.id);
 
   if (!customer) {
     return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
   }
 
-  const transactions = store.transactions.filter((entry) => entry.customer_id === params.id);
+  const transactions = await repository.listCustomerTransactions(customer.id);
   return NextResponse.json({ customer, transactions });
 }

@@ -1,36 +1,30 @@
 'use server';
 
-import { createCustomer } from '@/services/customer/customer.repository';
-import { assignCard } from '@/services/cards/card.repository';
-import { readStore } from '@/lib/data-store';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { assignCardToCustomer, registerCustomer } from '@/services/loyalty/loyalty.service';
 
 export async function enrollCustomer(formData: FormData) {
-  const firstName = String(formData.get('first_name') ?? '').trim();
-  const lastName = String(formData.get('last_name') ?? '').trim();
-  const phone = String(formData.get('phone') ?? '').trim();
-  const email = String(formData.get('email') ?? '').trim();
-  const cardId = String(formData.get('card_id') ?? '').trim();
-
-  if (!firstName || !lastName || !phone) {
-    throw new Error('First name, last name, and phone are required.');
-  }
-
-  const customer = await createCustomer({
-    first_name: firstName,
-    last_name: lastName,
-    phone,
-    email: email || null,
-    card_id: cardId || null,
+  const customer = await registerCustomer({
+    first_name: String(formData.get('first_name') ?? ''),
+    last_name: String(formData.get('last_name') ?? ''),
+    phone: String(formData.get('phone') ?? ''),
+    email: String(formData.get('email') ?? '') || null,
+    card_id: String(formData.get('card_id') ?? '') || null,
   });
 
-  if (cardId) {
-    const store = await readStore();
-    const card = store.cards.find((entry) => entry.id === cardId);
-    if (card) {
-      await assignCard(card.id, customer.id);
-    }
+  revalidatePath('/workflows/customers');
+  redirect(`/workflows/customers/${customer.id}`);
+}
+
+export async function assignCard(formData: FormData) {
+  const cardId = String(formData.get('card_id') ?? '');
+  const customerId = String(formData.get('customer_id') ?? '');
+
+  if (!cardId || !customerId) {
+    throw new Error('A card and a customer are required');
   }
 
-  redirect('/workflows');
+  await assignCardToCustomer(cardId, customerId);
+  revalidatePath(`/workflows/customers/${customerId}`);
 }

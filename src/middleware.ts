@@ -1,20 +1,27 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextRequest, NextResponse } from 'next/server';
 
+const PROTECTED_PATHS = ['/dashboard', '/workflows'];
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
+  const isSupabaseConfigured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+
+  // Local development without Supabase runs unauthenticated; production always
+  // has the Supabase variables set and therefore always enforces the session.
+  if (!isSupabaseConfigured) {
+    return response;
+  }
+
   const supabase = createMiddlewareClient({ req: request, res: response });
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const { data: { session } } = await supabase.auth.getSession();
-
-  // Protected routes that require authentication
-  const protectedPaths = ['/dashboard', '/workflows'];
-  const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
-
-  // Public paths that should redirect to dashboard if already authenticated
-  const authPaths = ['/login'];
-  const isAuthPath = authPaths.some((path) => request.nextUrl.pathname.startsWith(path));
+  const isProtectedPath = PROTECTED_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
 
   if (isProtectedPath && !session) {
     const redirectUrl = new URL('/login', request.url);
@@ -22,7 +29,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (isAuthPath && session) {
+  if (request.nextUrl.pathname.startsWith('/login') && session) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

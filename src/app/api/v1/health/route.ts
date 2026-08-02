@@ -1,14 +1,30 @@
 import { NextResponse } from 'next/server';
-import { readStore } from '@/lib/data-store';
+import { activeBackend, getRepository } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const store = await readStore();
-  return NextResponse.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    database: 'local',
-    cards: store.cards.length,
-    customers: store.customers.length,
-    transactions: store.transactions.length,
-  });
+  const repository = getRepository();
+
+  try {
+    const [customers, cards, transactions] = await Promise.all([
+      repository.listCustomers(),
+      repository.listCards(),
+      repository.listTransactions(),
+    ]);
+
+    return NextResponse.json({
+      status: 'ok',
+      backend: activeBackend(),
+      timestamp: new Date().toISOString(),
+      customers: customers.length,
+      cards: cards.length,
+      transactions: transactions.length,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { status: 'error', backend: activeBackend(), error: (error as Error).message },
+      { status: 503 }
+    );
+  }
 }

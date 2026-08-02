@@ -1,41 +1,32 @@
 'use server';
 
-import { readStore, writeStore } from '@/lib/data-store';
-import { createPurchaseTransaction, createRedemptionTransaction } from '@/services/transactions/transaction.repository';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { recordPurchase, redeemPoints } from '@/services/loyalty/loyalty.service';
 
 export async function recordTransaction(formData: FormData) {
   const customerId = String(formData.get('customer_id') ?? '').trim();
-  const type = String(formData.get('transaction_type') ?? '').trim() as 'PURCHASE' | 'REDEMPTION';
-  const amountStr = String(formData.get('amount') ?? '').trim();
-  const pointsStr = String(formData.get('points') ?? '').trim();
-  const notes = String(formData.get('notes') ?? '').trim();
+  const type = String(formData.get('transaction_type') ?? '').trim();
+  const notes = String(formData.get('notes') ?? '').trim() || null;
 
-  if (!customerId) throw new Error('Customer ID is required.');
+  if (!customerId) throw new Error('Customer is required');
 
-  const store = await readStore();
-  const settings = store.settings;
-
-  if (type === 'PURCHASE') {
-    const amount = parseFloat(amountStr);
-    if (isNaN(amount) || amount <= 0) throw new Error('A valid purchase amount is required.');
-    await createPurchaseTransaction({
-      customerId,
-      amountUsd: amount,
-      multiplier: settings.points_multiplier,
-      notes: notes || null,
+  if (type === 'REDEMPTION') {
+    await redeemPoints({
+      customer_id: customerId,
+      points: Number.parseInt(String(formData.get('points') ?? ''), 10),
+      notes,
     });
-  } else if (type === 'REDEMPTION') {
-    const points = parseInt(pointsStr, 10);
-    if (isNaN(points) || points <= 0) throw new Error('A valid points amount is required.');
-    await createRedemptionTransaction({
-      customerId,
-      points,
-      notes: notes || null,
+  } else if (type === 'PURCHASE') {
+    await recordPurchase({
+      customer_id: customerId,
+      amount: Number.parseFloat(String(formData.get('amount') ?? '')),
+      notes,
     });
   } else {
-    throw new Error('Invalid transaction type.');
+    throw new Error('Invalid transaction type');
   }
 
-  redirect('/workflows');
+  revalidatePath(`/workflows/customers/${customerId}`);
+  redirect(`/workflows/customers/${customerId}`);
 }

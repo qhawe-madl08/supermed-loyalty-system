@@ -1,22 +1,35 @@
+/**
+ * Seeds the local JSON development store (DATA_BACKEND=json).
+ * Production data lives in Supabase and is seeded with supabase/seed.sql.
+ */
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
 const storePath = path.join(process.cwd(), '.data', 'loyalty-store.json');
-const directory = path.dirname(storePath);
-fs.mkdirSync(directory, { recursive: true });
+fs.mkdirSync(path.dirname(storePath), { recursive: true });
 
-const seedStore = {
-  settings: {
-    points_multiplier: 1,
-    currency: 'USD',
-  },
-  cards: [
-    { id: 'card-001', card_number: 'SM000001', status: 'AVAILABLE', assigned_customer_id: null, created_at: new Date().toISOString() },
-    { id: 'card-002', card_number: 'SM000002', status: 'AVAILABLE', assigned_customer_id: null, created_at: new Date().toISOString() },
-  ],
-  customers: [],
-  transactions: [],
-};
+const now = new Date().toISOString();
+const cards = Array.from({ length: 20 }, (_, index) => ({
+  id: crypto.randomUUID(),
+  card_number: `SM${String(index + 1).padStart(6, '0')}`,
+  status: 'AVAILABLE',
+  customer_id: null,
+  created_at: now,
+}));
 
-fs.writeFileSync(storePath, JSON.stringify(seedStore, null, 2));
-console.log('Seeded loyalty store');
+fs.writeFileSync(
+  storePath,
+  JSON.stringify(
+    {
+      settings: { points_multiplier: 1, currency: 'USD' },
+      cards,
+      customers: [],
+      transactions: [],
+    },
+    null,
+    2
+  )
+);
+
+console.log(`Seeded ${cards.length} loyalty cards into ${storePath}`);

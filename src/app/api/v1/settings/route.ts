@@ -1,19 +1,15 @@
 import { NextResponse } from 'next/server';
-import { readStore, writeStore } from '@/lib/data-store';
+import { getRepository } from '@/lib/db';
 
 export async function GET() {
-  const store = await readStore();
-  return NextResponse.json({ settings: store.settings });
+  return NextResponse.json({ settings: await getRepository().getSettings() });
 }
 
 export async function POST(request: Request) {
-  const store = await readStore();
   const body = await request.json();
-  store.settings = {
-    ...store.settings,
-    points_multiplier: body.points_multiplier ?? store.settings.points_multiplier,
-    currency: body.currency ?? store.settings.currency,
-  };
-  await writeStore(store);
-  return NextResponse.json({ settings: store.settings });
+  const settings = await getRepository().updateSettings({
+    points_multiplier: body.points_multiplier,
+    currency: body.currency,
+  });
+  return NextResponse.json({ settings });
 }

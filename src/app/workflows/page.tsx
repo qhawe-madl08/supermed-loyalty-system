@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { listCustomers } from '@/services/customer/customer.repository';
+import { getRepository } from '@/lib/db';
 import { formatCustomerName } from '@/lib/workflow';
-import type { LegacyCustomerRecord } from '@/types';
+
+export const dynamic = 'force-dynamic';
 
 export default async function WorkflowsPage() {
-  const recentCustomers = (await listCustomers()).slice(-6).reverse();
+  const recentCustomers = (await getRepository().listCustomers()).slice(0, 6);
 
   return (
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900 sm:p-8">
@@ -21,13 +22,17 @@ export default async function WorkflowsPage() {
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold">Current customer queue</h2>
+            <h2 className="text-lg font-semibold">Recently registered</h2>
             <div className="mt-4 space-y-3">
               {recentCustomers.length === 0 ? (
-                <p className="text-sm text-slate-500">No customers have been enrolled yet.</p>
+                <p className="text-sm text-slate-500">No customers have been registered yet.</p>
               ) : (
-                recentCustomers.map((customer: LegacyCustomerRecord) => (
-                  <div key={customer.id} className="flex items-center justify-between rounded-xl border border-slate-200 p-3">
+                recentCustomers.map((customer) => (
+                  <Link
+                    key={customer.id}
+                    href={`/workflows/customers/${customer.id}`}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 p-3 transition hover:border-blue-500"
+                  >
                     <div>
                       <p className="font-medium">{formatCustomerName(customer)}</p>
                       <p className="text-sm text-slate-500">{customer.phone}</p>
@@ -36,28 +41,20 @@ export default async function WorkflowsPage() {
                       <p>{customer.points_balance} pts</p>
                       <p>{customer.card_id ? 'Card linked' : 'No card'}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold">Suggested next actions</h2>
-            <ul className="mt-4 space-y-3 text-sm text-slate-600">
-              <li>Use the enrollment endpoint to add a new customer with an available card.</li>
-              <li>Record a purchase to generate points and update the ledger.</li>
-              <li>Redeem points when the customer is ready to claim a reward.</li>
-            </ul>
+            <h2 className="text-lg font-semibold">Quick actions</h2>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/workflows/enroll" className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-                Enroll customer
+                Register customer
               </Link>
-              <Link href="/workflows/transaction" className="rounded-full bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
-                Record transaction
-              </Link>
-              <Link href="/api/v1/transactions" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-blue-500 hover:text-blue-600">
-                Open transactions API
+              <Link href="/workflows/customers" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-blue-500 hover:text-blue-600">
+                Find customer
               </Link>
             </div>
           </section>

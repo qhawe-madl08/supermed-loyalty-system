@@ -1,33 +1,32 @@
 import { NextResponse } from 'next/server';
-import { createCustomer, findCustomerByPhone, listCustomers } from '@/services/customer/customer.repository';
-import { assignCard } from '@/services/cards/card.repository';
+import { getRepository } from '@/lib/db';
+import { registerCustomer } from '@/services/loyalty/loyalty.service';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const phone = searchParams.get('phone');
+  const repository = getRepository();
 
   if (phone) {
-    const customer = await findCustomerByPhone(phone);
-    return NextResponse.json({ customer });
+    return NextResponse.json({ customer: await repository.findCustomerByPhone(phone) });
   }
 
-  const customers = await listCustomers();
-  return NextResponse.json({ customers });
+  return NextResponse.json({ customers: await repository.listCustomers() });
 }
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const customer = await createCustomer({
-    first_name: body.first_name,
-    last_name: body.last_name,
-    phone: body.phone,
-    email: body.email,
-    card_id: body.card_id,
-  });
 
-  if (body.card_id) {
-    await assignCard(body.card_id, customer.id);
+  try {
+    const customer = await registerCustomer({
+      first_name: body.first_name ?? '',
+      last_name: body.last_name ?? '',
+      phone: body.phone ?? '',
+      email: body.email,
+      card_id: body.card_id,
+    });
+    return NextResponse.json({ customer }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 400 });
   }
-
-  return NextResponse.json({ customer });
 }

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { findCustomerByPhone } from '@/services/customer/customer.repository';
+import { getRepository } from '@/lib/db';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const phone = searchParams.get('phone') ?? '';
-  const customer = await findCustomerByPhone(phone);
-  return NextResponse.json({ customer_summary: customer ?? null });
+  const query = searchParams.get('q') ?? searchParams.get('phone') ?? '';
+  const customers = await getRepository().searchCustomers(query);
+  return NextResponse.json({ customers, count: customers.length });
 }
