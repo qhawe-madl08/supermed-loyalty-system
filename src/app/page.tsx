@@ -8,7 +8,7 @@ export default function HomePage() {
       <div className="relative h-[600px] bg-gradient-to-r from-blue-600 to-blue-800">
         {/* Background Image - Replace with actual Supermed imagery */}
         <div className="absolute inset-0 bg-cover bg-center opacity-30" 
-             style={{ backgroundImage: 'url(/media/hero-banner.svg)' }}></div>
+             style={{ backgroundImage: 'url(/media/hero-banner.png)' }}></div>
         
         <div className="absolute inset-0 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -18,7 +18,7 @@ export default function HomePage() {
                   {/* Logo - Responsive sizing */}
                   <div className="relative w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
                     <Image
-                      src="/media/logo.svg"
+                      src="/media/logo.png"
                       alt="Supermed Pharmacy Logo"
                       fill
                       className="object-contain"
