@@ -41,7 +41,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="relative w-20 h-20 mx-auto mb-4">
             <Image
-              src="/media/logo.svg"
+              src="/media/logo.png"
               alt="Supermed Pharmacy Logo"
               fill
               className="object-contain"

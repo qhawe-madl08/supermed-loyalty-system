@@ -1,18 +1,16 @@
 # Supermed Media Assets
 
-## Required Assets (to be uploaded manually)
+## Current Assets
 
 ### Logo
-- **File:** `logo.svg` (current placeholder)
-- **Future:** Replace with `logo.png` for raster version
+- **File:** `logo.png`
 - **Usage:** Primary logo for website and branding
 - **Specifications:** High resolution PNG with transparent background
-- **Sizes:** Should be scalable from 32px to 200px
+- **Sizes:** Automatically responsive (32px to 200px)
 - **Background:** Works on both light and dark backgrounds
 
 ### Hero Banner
-- **File:** `hero-banner.svg` (current placeholder)
-- **Future:** Replace with `hero-banner.jpg` for actual imagery
+- **File:** `Hero-banner.png`
 - **Usage:** Homepage hero section background
 - **Specifications:** 1920x1080 or higher resolution
 - **Style:** Professional pharmacy/healthcare imagery

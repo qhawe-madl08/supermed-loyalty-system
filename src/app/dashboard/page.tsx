@@ -75,7 +75,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-4">
               <div className="relative w-10 h-10">
                 <Image
-                  src="/media/logo.svg"
+                  src="/media/logo.png"
                   alt="Supermed Pharmacy Logo"
                   fill
                   className="object-contain"
