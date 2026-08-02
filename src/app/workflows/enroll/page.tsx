@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { readStore } from '@/lib/data-store';
-import { enrollCustomer } from '@/app/actions/customer-actions';
+import { EnrollCustomerForm } from './enroll-customer-form';
 
 export default async function EnrollCustomerPage() {
   const store = await readStore();
@@ -19,42 +19,7 @@ export default async function EnrollCustomerPage() {
           </Link>
         </div>
 
-        <form action={enrollCustomer} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-sm font-medium text-slate-700">
-              First name
-              <input name="first_name" required className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" />
-            </label>
-            <label className="text-sm font-medium text-slate-700">
-              Last name
-              <input name="last_name" required className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" />
-            </label>
-            <label className="text-sm font-medium text-slate-700">
-              Phone
-              <input name="phone" required className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" />
-            </label>
-            <label className="text-sm font-medium text-slate-700">
-              Email
-              <input type="email" name="email" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" />
-            </label>
-          </div>
-
-          <label className="mt-4 block text-sm font-medium text-slate-700">
-            Assign card
-            <select name="card_id" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2">
-              <option value="">No card yet</option>
-              {availableCards.map((card) => (
-                <option key={card.id} value={card.id}>
-                  {card.card_number}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <button type="submit" className="mt-6 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-            Create customer
-          </button>
-        </form>
+        <EnrollCustomerForm availableCards={availableCards} />
       </div>
     </main>
   );

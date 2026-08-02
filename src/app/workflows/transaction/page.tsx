@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { listCustomers } from '@/services/customer/customer.repository';
-import { recordTransaction } from '@/app/actions/transaction-actions';
+import { listCustomers } from '@/services/customer/customer.repository.json';
+import { TransactionForm } from './transaction-form';
 import type { LegacyCustomerRecord } from '@/types';
 
 export default async function TransactionPage() {
@@ -21,64 +21,7 @@ export default async function TransactionPage() {
           </Link>
         </div>
 
-        <form action={recordTransaction} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-sm font-medium text-slate-700">
-              Customer
-              <select name="customer_id" required className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2">
-                <option value="">Select a customer</option>
-                {customers.map((customer: LegacyCustomerRecord) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.first_name} {customer.last_name} ({customer.phone}) — {customer.points_balance} pts
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm font-medium text-slate-700">
-              Type
-              <select name="transaction_type" required className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2">
-                <option value="PURCHASE">Purchase</option>
-                <option value="REDEMPTION">Redemption</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-sm font-medium text-slate-700">
-              Amount (USD)
-              <input
-                type="number"
-                name="amount"
-                step="0.01"
-                min="0.01"
-                placeholder="e.g. 25.50"
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
-              />
-              <p className="mt-1 text-xs text-slate-500">Required for purchases</p>
-            </label>
-            <label className="text-sm font-medium text-slate-700">
-              Points
-              <input
-                type="number"
-                name="points"
-                step="1"
-                min="1"
-                placeholder="e.g. 500"
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
-              />
-              <p className="mt-1 text-xs text-slate-500">Required for redemptions</p>
-            </label>
-          </div>
-
-          <label className="mt-4 block text-sm font-medium text-slate-700">
-            Notes
-            <textarea name="notes" rows={3} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-
-          <button type="submit" className="mt-6 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-            Record transaction
-          </button>
-        </form>
+        <TransactionForm customers={customers} />
       </div>
     </main>
   );

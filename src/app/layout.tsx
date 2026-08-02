@@ -1,15 +1,20 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import { AuthProvider } from '@/contexts/auth-context';
 
 export const metadata: Metadata = {
-  title: 'Supermed Loyalty MVP',
-  description: 'Simple staff workflow for loyalty cards and points.',
+  title: 'Supermed Loyalty System',
+  description: 'Enterprise customer loyalty management for Supermed Pharmacies',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }

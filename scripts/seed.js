@@ -16,6 +16,8 @@ const seedStore = {
   ],
   customers: [],
   transactions: [],
+  audit_logs: [],
+  idempotency_records: [],
 };
 
 fs.writeFileSync(storePath, JSON.stringify(seedStore, null, 2));

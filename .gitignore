@@ -21,6 +21,11 @@ tsconfig.tsbuildinfo
 .DS_Store
 Thumbs.db
 
+# ── Media assets notes ─────────────────────────────────────────────────────────
+# Media placeholders (SVG) should be committed
+# When actual high-res assets are added, ensure they're optimized
+# Large files (>5MB) should be avoided in repository
+
 # ── AI assistant config directories ───────────────────────────────────────────
 # These are installed by various AI coding tools and contain only local tooling
 # config; they should never be committed to the repository.

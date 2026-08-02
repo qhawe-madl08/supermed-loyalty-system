@@ -1,12 +1,14 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import type { CardRecord, CustomerRecord, SettingsRecord, TransactionRecord } from '../types';
+import type { LegacyCardRecord, LegacyCustomerRecord, LegacyTransactionRecord, SettingsRecord } from '../types';
 
 export interface LoyaltyStore {
   settings: SettingsRecord;
-  cards: CardRecord[];
-  customers: CustomerRecord[];
-  transactions: TransactionRecord[];
+  cards: LegacyCardRecord[];
+  customers: LegacyCustomerRecord[];
+  transactions: LegacyTransactionRecord[];
+  audit_logs?: any[];
+  idempotency_records?: any[];
 }
 
 const storePath = path.join(process.cwd(), '.data', 'loyalty-store.json');
@@ -37,6 +39,8 @@ function createDefaultStore(): LoyaltyStore {
     cards: [],
     customers: [],
     transactions: [],
+    audit_logs: [],
+    idempotency_records: [],
   };
 }
 
@@ -54,7 +58,17 @@ async function ensureStoreFile(): Promise<void> {
 export async function readStore(): Promise<LoyaltyStore> {
   await ensureStoreFile();
   const raw = await fs.readFile(storePath, 'utf8');
-  return deriveCustomerBalances(JSON.parse(raw) as LoyaltyStore);
+  const parsed = JSON.parse(raw) as LoyaltyStore;
+  
+  // Ensure new fields exist for backward compatibility
+  if (!parsed.audit_logs) {
+    parsed.audit_logs = [];
+  }
+  if (!parsed.idempotency_records) {
+    parsed.idempotency_records = [];
+  }
+  
+  return deriveCustomerBalances(parsed);
 }
 
 export async function writeStore(store: LoyaltyStore): Promise<void> {
