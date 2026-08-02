@@ -1,7 +1,7 @@
 import { readStore, writeStore } from '@/lib/data-store';
 import type { LegacyCardRecord } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
-import { logAuditEvent, AuditActions } from '@/lib/audit-logger';
+import { logAuditEvent, AuditActions } from '@/lib/audit-logger-server';
 
 export async function registerCard(cardNumber: string): Promise<LegacyCardRecord> {
   const store = await readStore();

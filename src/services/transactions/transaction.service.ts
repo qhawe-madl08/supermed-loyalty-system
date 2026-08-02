@@ -1,4 +1,4 @@
-import { TransactionRecord } from '@/types';
+import { LegacyTransactionRecord } from '@/types';
 import { calculatePointsForPurchase } from '@/services/loyalty/points.service';
 
 export function createPurchaseTransaction(input: {
@@ -8,7 +8,7 @@ export function createPurchaseTransaction(input: {
   multiplier: number;
   balanceBefore: number;
   notes?: string | null;
-}): TransactionRecord {
+}): LegacyTransactionRecord {
   const pointsEarned = calculatePointsForPurchase(input.amountUsd, input.multiplier);
   const balanceAfter = input.balanceBefore + pointsEarned;
 
@@ -32,7 +32,7 @@ export function createRedemptionTransaction(input: {
   points: number;
   balanceBefore: number;
   notes?: string | null;
-}): TransactionRecord {
+}): LegacyTransactionRecord {
   const balanceAfter = Math.max(0, input.balanceBefore - input.points);
 
   return {

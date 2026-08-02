@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { enrollCustomer } from '@/app/actions/customer-actions';
 import { ActionResult } from '@/lib/action-response';
-import type { LegacyCardRecord } from '@/types';
+import type { LegacyCardRecord, LegacyCustomerRecord } from '@/types';
 
 interface EnrollCustomerFormProps {
   availableCards: LegacyCardRecord[];
@@ -28,7 +29,7 @@ export function EnrollCustomerForm({ availableCards }: EnrollCustomerFormProps) 
     setSuccess(false);
 
     const formDataObj = new FormData(e.currentTarget);
-    const result: ActionResult = await enrollCustomer(formDataObj);
+    const result: ActionResult<LegacyCustomerRecord> = await enrollCustomer(formDataObj);
 
     if (result.success) {
       setSuccess(true);

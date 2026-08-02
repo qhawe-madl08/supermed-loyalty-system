@@ -4,9 +4,10 @@ import { readStore } from '@/lib/data-store';
 import { createPurchaseTransaction, createRedemptionTransaction } from '@/services/transactions/transaction.repository.json';
 import { getCurrentCustomerBalance } from '@/services/customer/customer.repository.json';
 import { ActionResult, success, insufficientPointsError, customerNotFoundError, validationError, serverError } from '@/lib/action-response';
-import { checkIdempotency, recordIdempotency, generateIdempotencyKey } from '@/lib/idempotency';
+import { checkIdempotency, recordIdempotency, generateIdempotencyKey } from '@/lib/idempotency-server';
+import type { LegacyTransactionRecord } from '@/types';
 
-export async function recordTransaction(formData: FormData): Promise<ActionResult> {
+export async function recordTransaction(formData: FormData): Promise<ActionResult<LegacyTransactionRecord>> {
   try {
     const customerId = String(formData.get('customer_id') ?? '').trim();
     const type = String(formData.get('transaction_type') ?? '').trim() as 'PURCHASE' | 'REDEMPTION';
@@ -16,7 +17,7 @@ export async function recordTransaction(formData: FormData): Promise<ActionResul
     const idempotencyKey = String(formData.get('idempotency_key') ?? '').trim() || generateIdempotencyKey();
 
     if (!customerId) {
-      return validationError('Customer ID is required.');
+      return validationError<LegacyTransactionRecord>('Customer ID is required.');
     }
 
     // Check idempotency
@@ -28,12 +29,12 @@ export async function recordTransaction(formData: FormData): Promise<ActionResul
     const store = await readStore();
     const settings = store.settings;
 
-    let result: ActionResult;
+    let result: ActionResult<LegacyTransactionRecord>;
 
     if (type === 'PURCHASE') {
       const amount = parseFloat(amountStr);
       if (isNaN(amount) || amount <= 0) {
-        return validationError('A valid purchase amount is required.');
+        return validationError<LegacyTransactionRecord>('A valid purchase amount is required.');
       }
       const transaction = await createPurchaseTransaction({
         customerId,
@@ -45,7 +46,7 @@ export async function recordTransaction(formData: FormData): Promise<ActionResul
     } else if (type === 'REDEMPTION') {
       const points = parseInt(pointsStr, 10);
       if (isNaN(points) || points <= 0) {
-        return validationError('A valid points amount is required.');
+        return validationError<LegacyTransactionRecord>('A valid points amount is required.');
       }
 
       const currentBalance = await getCurrentCustomerBalance(customerId);
@@ -60,7 +61,7 @@ export async function recordTransaction(formData: FormData): Promise<ActionResul
       });
       result = success(transaction);
     } else {
-      return validationError('Invalid transaction type.');
+      return validationError<LegacyTransactionRecord>('Invalid transaction type.');
     }
 
     // Record idempotency

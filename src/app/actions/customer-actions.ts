@@ -3,8 +3,9 @@
 import { createCustomer } from '@/services/customer/customer.repository.json';
 import { assignCard } from '@/services/cards/card.repository.json';
 import { ActionResult, success, duplicatePhoneError, cardAlreadyAssignedError, validationError, serverError } from '@/lib/action-response';
+import type { LegacyCustomerRecord } from '@/types';
 
-export async function enrollCustomer(formData: FormData): Promise<ActionResult> {
+export async function enrollCustomer(formData: FormData): Promise<ActionResult<LegacyCustomerRecord>> {
   try {
     const firstName = String(formData.get('first_name') ?? '').trim();
     const lastName = String(formData.get('last_name') ?? '').trim();
@@ -13,7 +14,7 @@ export async function enrollCustomer(formData: FormData): Promise<ActionResult> 
     const cardId = String(formData.get('card_id') ?? '').trim();
 
     if (!firstName || !lastName || !phone) {
-      return validationError('First name, last name, and phone are required.');
+      return validationError<LegacyCustomerRecord>('First name, last name, and phone are required.');
     }
 
     const customer = await createCustomer({

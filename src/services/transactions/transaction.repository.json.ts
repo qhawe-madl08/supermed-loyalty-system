@@ -2,7 +2,7 @@ import { readStore, writeStore } from '@/lib/data-store';
 import type { LegacyTransactionRecord } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { updateCustomerBalance } from '@/services/customer/customer.repository.json';
-import { logAuditEvent, AuditActions } from '@/lib/audit-logger';
+import { logAuditEvent, AuditActions } from '@/lib/audit-logger-server';
 
 export async function createPurchaseTransaction(input: {
   customerId: string;

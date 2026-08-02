@@ -176,10 +176,11 @@ Current work:
 7. ✅ **Add session management** (COMPLETED)
 8. ✅ **Update middleware for production authentication** (COMPLETED)
 9. ✅ **Create development seeder for Supabase staff users** (COMPLETED)
-10. ⏳ **Configure production Supabase credentials** (NEXT PRIORITY)
-11. ⏳ **Migrate data** from JSON to Supabase
-12. ⏳ **Switch application** to use Supabase repositories
-13. ⏳ **Finalize production deployment**
+10. ✅ **Update media assets with actual logo and hero banner** (COMPLETED)
+11. ✅ **Deploy to production via Git** (COMPLETED)
+12. ⏳ **Configure production Supabase credentials** (NEXT PRIORITY)
+13. ⏳ **Migrate data** from JSON to Supabase
+14. ⏳ **Switch application** to use Supabase repositories
 
 ## Restart checklist for a new IDE or session
 1. Open the repository root

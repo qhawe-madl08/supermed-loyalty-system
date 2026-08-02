@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { recordTransaction } from '@/app/actions/transaction-actions';
 import { ActionResult } from '@/lib/action-response';
 import { generateIdempotencyKey } from '@/lib/idempotency';
-import type { LegacyCustomerRecord } from '@/types';
+import type { LegacyCustomerRecord, LegacyTransactionRecord } from '@/types';
 
 interface TransactionFormProps {
   customers: LegacyCustomerRecord[];
@@ -30,7 +31,7 @@ export function TransactionForm({ customers }: TransactionFormProps) {
     setSuccess(false);
 
     const formDataObj = new FormData(e.currentTarget);
-    const result: ActionResult = await recordTransaction(formDataObj);
+    const result: ActionResult<LegacyTransactionRecord> = await recordTransaction(formDataObj);
 
     if (result.success) {
       setSuccess(true);

@@ -1,6 +1,3 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { listCustomers } from '@/services/customer/customer.repository.json';
@@ -9,33 +6,10 @@ import { listCards } from '@/services/cards/card.repository.json';
 import type { LegacyCustomerRecord, LegacyTransactionRecord } from '@/types';
 import { UserMenu } from '@/components/user-menu';
 
-export default function DashboardPage() {
-  const [customers, setCustomers] = useState<LegacyCustomerRecord[]>([]);
-  const [allTransactions, setAllTransactions] = useState<LegacyTransactionRecord[]>([]);
-  const [cards, setCards] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [customersData, transactionsData, cardsData] = await Promise.all([
-          listCustomers(),
-          listTransactions(),
-          listCards()
-        ]);
-        setCustomers(customersData);
-        setAllTransactions(transactionsData);
-        setCards(cardsData);
-      } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
+export default async function DashboardPage() {
+  const customers = await listCustomers();
+  const allTransactions = await listTransactions();
+  const cards = await listCards();
   const today = new Date().toISOString().slice(0, 10);
   const lastUpdated = new Date().toLocaleString();
 
@@ -54,17 +28,6 @@ export default function DashboardPage() {
   };
 
   const recentTransactions = allTransactions.slice(0, 5);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">

@@ -1,6 +1,6 @@
-import { CardRecord } from '@/types';
+import { LegacyCardRecord } from '@/types';
 
-export function registerCard(cardNumber: string): CardRecord {
+export function registerCard(cardNumber: string): LegacyCardRecord {
   return {
     id: `card-${Math.random().toString(36).slice(2, 10)}`,
     card_number: cardNumber,
@@ -10,7 +10,7 @@ export function registerCard(cardNumber: string): CardRecord {
   };
 }
 
-export function assignCard(card: CardRecord, customerId: string): CardRecord {
+export function assignCard(card: LegacyCardRecord, customerId: string): LegacyCardRecord {
   return {
     ...card,
     status: 'ASSIGNED',
@@ -18,7 +18,7 @@ export function assignCard(card: CardRecord, customerId: string): CardRecord {
   };
 }
 
-export function updateCardStatus(card: CardRecord, status: CardRecord['status']): CardRecord {
+export function updateCardStatus(card: LegacyCardRecord, status: LegacyCardRecord['status']): LegacyCardRecord {
   return {
     ...card,
     status,
