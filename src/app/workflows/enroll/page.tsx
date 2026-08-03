@@ -1,11 +1,7 @@
 import Link from 'next/link';
-import { readStore } from '@/lib/data-store';
 import { EnrollCustomerForm } from './enroll-customer-form';
 
 export default async function EnrollCustomerPage() {
-  const store = await readStore();
-  const availableCards = store.cards.filter((card) => card.status === 'AVAILABLE');
-
   return (
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900 sm:p-8">
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -19,7 +15,7 @@ export default async function EnrollCustomerPage() {
           </Link>
         </div>
 
-        <EnrollCustomerForm availableCards={availableCards} />
+        <EnrollCustomerForm />
       </div>
     </main>
   );

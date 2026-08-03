@@ -1,6 +1,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export const createSupabaseServerClient = cache(() => {
   return createServerComponentClient({ cookies: () => cookies() });
@@ -23,10 +24,14 @@ export type UserRole = 'cashier' | 'manager' | 'admin' | 'owner';
 export async function getUserRole(): Promise<UserRole | null> {
   const user = await getUser();
   if (!user) return null;
-  
-  // Role will be stored in user metadata or a separate profiles table
-  // For now, default to cashier
-  return (user.user_metadata?.role as UserRole) ?? 'cashier';
+
+  const { data } = await supabaseAdmin
+    .from('staff_users')
+    .select('role')
+    .eq('auth_user_id', user.id)
+    .maybeSingle();
+
+  return (data?.role as UserRole) ?? null;
 }
 
 export async function requireAuth() {
@@ -40,11 +45,11 @@ export async function requireAuth() {
 export async function requireRole(allowedRoles: UserRole[]) {
   const session = await requireAuth();
   const role = await getUserRole();
-  
+
   if (!role || !allowedRoles.includes(role)) {
     throw new Error('Insufficient permissions');
   }
-  
+
   return { session, role };
 }
 

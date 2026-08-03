@@ -1,14 +1,11 @@
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createSupabaseServerClient } from '@/lib/auth';
 import type { CustomerRecord, LegacyCustomerRecord } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
+import { getDefaultTenantId } from '@/lib/tenant-helper';
 
-function getTenantId(): string {
-  // In a real app, this would come from the authenticated user's JWT claims
-  // For MVP, we'll use a default tenant ID or read from env
-  return process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID ?? '00000000-0000-0000-0000-000000000001';
-}
-
-function toLegacyCustomer(customer: CustomerRecord): LegacyCustomerRecord {
+function toLegacyCustomer(
+  customer: CustomerRecord,
+  cardId: string | null = null
+): LegacyCustomerRecord {
   const nameParts = customer.full_name.trim().split(' ');
   return {
     id: customer.id,
@@ -17,7 +14,7 @@ function toLegacyCustomer(customer: CustomerRecord): LegacyCustomerRecord {
     phone: customer.phone_e164,
     email: customer.email,
     points_balance: customer.points_balance,
-    card_id: null, // Would need to fetch from loyalty_cards table
+    card_id: cardId,
     created_at: customer.created_at,
   };
 }
@@ -27,12 +24,12 @@ export async function createCustomer(input: {
   last_name: string;
   phone: string;
   email?: string | null;
-  card_id?: string | null;
 }): Promise<LegacyCustomerRecord> {
-  const tenantId = getTenantId();
+  const tenantId = await getDefaultTenantId();
   const fullName = `${input.first_name} ${input.last_name}`.trim();
 
-  const { data, error } = await supabaseAdmin
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('customers')
     .insert({
       tenant_id: tenantId,
@@ -46,18 +43,22 @@ export async function createCustomer(input: {
     .single();
 
   if (error) {
+    if (error.code === '23505') {
+      throw new Error('DUPLICATE_PHONE');
+    }
     throw new Error(`Failed to create customer: ${error.message}`);
   }
 
-  return toLegacyCustomer(data);
+  return toLegacyCustomer(data, null);
 }
 
 export async function listCustomers(): Promise<LegacyCustomerRecord[]> {
-  const tenantId = getTenantId();
+  const tenantId = await getDefaultTenantId();
 
-  const { data, error } = await supabaseAdmin
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('customers')
-    .select('*')
+    .select('*, loyalty_cards!loyalty_cards_customer_id_fkey(id, status)')
     .eq('tenant_id', tenantId)
     .eq('is_active', true)
     .order('created_at', { ascending: false });
@@ -66,15 +67,21 @@ export async function listCustomers(): Promise<LegacyCustomerRecord[]> {
     throw new Error(`Failed to list customers: ${error.message}`);
   }
 
-  return (data ?? []).map(toLegacyCustomer);
+  return (data ?? []).map((row) => {
+    const activeCard = (row.loyalty_cards as Array<{ id: string; status: string }> | null)
+      ?.find((c) => c.status === 'active') ?? null;
+    const { loyalty_cards: _, ...customer } = row;
+    return toLegacyCustomer(customer as CustomerRecord, activeCard?.id ?? null);
+  });
 }
 
 export async function findCustomerByPhone(phone: string): Promise<LegacyCustomerRecord | undefined> {
-  const tenantId = getTenantId();
+  const tenantId = await getDefaultTenantId();
 
-  const { data, error } = await supabaseAdmin
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('customers')
-    .select('*')
+    .select('*, loyalty_cards!loyalty_cards_customer_id_fkey(id, status)')
     .eq('tenant_id', tenantId)
     .eq('phone_e164', phone)
     .eq('is_active', true)
@@ -84,13 +91,19 @@ export async function findCustomerByPhone(phone: string): Promise<LegacyCustomer
     throw new Error(`Failed to find customer: ${error.message}`);
   }
 
-  return data ? toLegacyCustomer(data) : undefined;
+  if (!data) return undefined;
+
+  const activeCard = (data.loyalty_cards as Array<{ id: string; status: string }> | null)
+    ?.find((c) => c.status === 'active') ?? null;
+  const { loyalty_cards: _, ...customer } = data;
+  return toLegacyCustomer(customer as CustomerRecord, activeCard?.id ?? null);
 }
 
 export async function getCurrentCustomerBalance(customerId: string): Promise<number> {
-  const tenantId = getTenantId();
+  const tenantId = await getDefaultTenantId();
 
-  const { data, error } = await supabaseAdmin
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('customers')
     .select('points_balance')
     .eq('tenant_id', tenantId)
@@ -108,11 +121,12 @@ export async function getCurrentCustomerBalance(customerId: string): Promise<num
 }
 
 export async function getCustomerById(customerId: string): Promise<LegacyCustomerRecord | null> {
-  const tenantId = getTenantId();
+  const tenantId = await getDefaultTenantId();
 
-  const { data, error } = await supabaseAdmin
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('customers')
-    .select('*')
+    .select('*, loyalty_cards!loyalty_cards_customer_id_fkey(id, status)')
     .eq('tenant_id', tenantId)
     .eq('id', customerId)
     .maybeSingle();
@@ -121,5 +135,10 @@ export async function getCustomerById(customerId: string): Promise<LegacyCustome
     throw new Error(`Failed to get customer: ${error.message}`);
   }
 
-  return data ? toLegacyCustomer(data) : null;
+  if (!data) return null;
+
+  const activeCard = (data.loyalty_cards as Array<{ id: string; status: string }> | null)
+    ?.find((c) => c.status === 'active') ?? null;
+  const { loyalty_cards: _, ...customer } = data;
+  return toLegacyCustomer(customer as CustomerRecord, activeCard?.id ?? null);
 }

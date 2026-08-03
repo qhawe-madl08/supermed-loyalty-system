@@ -7,9 +7,9 @@ export default function HomePage() {
       {/* Hero Section with Image Background */}
       <div className="relative h-[600px] bg-gradient-to-r from-blue-600 to-blue-800">
         {/* Background Image - Replace with actual Supermed imagery */}
-        <div className="absolute inset-0 bg-cover bg-center opacity-30" 
-             style={{ backgroundImage: 'url(/media/Hero-banner.png)' }}></div>
-        
+        <div className="absolute inset-0 bg-cover bg-center opacity-30"
+          style={{ backgroundImage: 'url(/media/hero-banner.png)' }}></div>
+
         <div className="absolute inset-0 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -34,11 +34,11 @@ export default function HomePage() {
                     </p>
                   </div>
                 </div>
-                
+
                 <p className="text-xl md:text-2xl text-blue-100 mb-8 font-light">
                   Enhancing Quality of Life Through Super Products, Super Staff and Super Service
                 </p>
-                
+
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link href="/login" className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition text-center">
                     Staff Login
@@ -48,7 +48,7 @@ export default function HomePage() {
                   </Link>
                 </div>
               </div>
-              
+
               {/* Pharmacy Imagery - Replace with actual Supermed photos */}
               <div className="hidden md:block">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
@@ -80,7 +80,7 @@ export default function HomePage() {
             Why Choose Supermed Pharmacy?
           </h2>
           <p className="text-slate-600 max-w-2xl mx-auto">
-            Bulawayo's leading Pharmacy offering quality pharmaceuticals and cosmetics
+            Bulawayo&apos;s leading Pharmacy offering quality pharmaceuticals and cosmetics
           </p>
         </div>
 

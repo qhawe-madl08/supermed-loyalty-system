@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { getCustomerById } from '@/services/customer/customer.repository';
 import { getCustomerTransactions } from '@/services/transactions/transaction.repository';

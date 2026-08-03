@@ -1,10 +1,10 @@
 'use server';
 
-import { readStore } from '@/lib/data-store';
-import { createPurchaseTransaction, createRedemptionTransaction } from '@/services/transactions/transaction.repository.json';
-import { getCurrentCustomerBalance } from '@/services/customer/customer.repository.json';
+import { getSettings } from '@/services/settings/settings.repository';
+import { createPurchaseTransaction, createRedemptionTransaction } from '@/services/transactions/transaction.repository';
+import { getCurrentCustomerBalance } from '@/services/customer/customer.repository';
 import { ActionResult, success, insufficientPointsError, customerNotFoundError, validationError, serverError } from '@/lib/action-response';
-import { checkIdempotency, recordIdempotency, generateIdempotencyKey } from '@/lib/idempotency-server';
+import { checkIdempotency, recordIdempotency, generateIdempotencyKey } from '@/services/idempotency/idempotency.repository';
 import type { LegacyTransactionRecord } from '@/types';
 
 export async function recordTransaction(formData: FormData): Promise<ActionResult<LegacyTransactionRecord>> {
@@ -26,8 +26,7 @@ export async function recordTransaction(formData: FormData): Promise<ActionResul
       return existingResult;
     }
 
-    const store = await readStore();
-    const settings = store.settings;
+    const settings = await getSettings();
 
     let result: ActionResult<LegacyTransactionRecord>;
 

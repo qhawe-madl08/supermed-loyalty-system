@@ -1,5 +1,6 @@
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
-import { listCustomers } from '@/services/customer/customer.repository.json';
+import { listCustomers } from '@/services/customer/customer.repository';
 import type { LegacyCustomerRecord } from '@/types';
 
 export default async function CustomersPage() {

@@ -1,18 +1,43 @@
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createSupabaseServerClient } from '@/lib/auth';
 import type { TransactionRecord, LegacyTransactionRecord } from '@/types';
 import { calculatePointsForPurchase } from '@/services/loyalty/points.service';
+import { getDefaultTenantId } from '@/lib/tenant-helper';
+import { getUser } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
-function getTenantId(): string {
-  return process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID ?? '00000000-0000-0000-0000-000000000001';
+async function getAuthenticatedStaffId(): Promise<string | null> {
+  try {
+    const user = await getUser();
+    if (!user) return null;
+    const supabase = createSupabaseServerClient();
+    const { data } = await supabase
+      .from('staff_users')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .maybeSingle();
+    return data?.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
-function getStaffId(): string | null {
-  // In a real app, this would come from the authenticated user's session
-  return null;
+async function getCustomerBalanceSnapshot(
+  customerId: string
+): Promise<{ before: number; after: number }> {
+  const supabase = createSupabaseServerClient();
+  const { data } = await supabase
+    .from('customers')
+    .select('points_balance')
+    .eq('id', customerId)
+    .single();
+  return { before: data?.points_balance ?? 0, after: 0 };
 }
 
-function toLegacyTransaction(txn: TransactionRecord): LegacyTransactionRecord {
+function toLegacyTransaction(
+  txn: TransactionRecord,
+  balanceBefore: number,
+  balanceAfter: number
+): LegacyTransactionRecord {
   return {
     id: txn.id,
     customer_id: txn.customer_id,
@@ -20,8 +45,8 @@ function toLegacyTransaction(txn: TransactionRecord): LegacyTransactionRecord {
     transaction_type: mapTxnType(txn.txn_type),
     purchase_amount: txn.amount,
     points: txn.points,
-    balance_before: 0, // Would need to calculate from ledger
-    balance_after: 0,  // Would need to calculate from ledger
+    balance_before: balanceBefore,
+    balance_after: balanceAfter,
     notes: txn.reason,
     created_at: txn.created_at,
   };
@@ -49,12 +74,15 @@ export async function createPurchaseTransaction(input: {
   multiplier: number;
   notes?: string | null;
 }): Promise<LegacyTransactionRecord> {
-  const tenantId = getTenantId();
-  const staffId = getStaffId();
+  const tenantId = await getDefaultTenantId();
+  const staffId = input.cashierId ?? await getAuthenticatedStaffId();
   const pointsEarned = calculatePointsForPurchase(input.amountUsd, input.multiplier);
   const idempotencyKey = uuidv4();
 
-  const { data, error } = await supabaseAdmin
+  const { before } = await getCustomerBalanceSnapshot(input.customerId);
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('points_ledger')
     .insert({
       tenant_id: tenantId,
@@ -75,7 +103,7 @@ export async function createPurchaseTransaction(input: {
     throw new Error(`Failed to create purchase transaction: ${error.message}`);
   }
 
-  return toLegacyTransaction(data);
+  return toLegacyTransaction(data, before, before + pointsEarned);
 }
 
 export async function createRedemptionTransaction(input: {
@@ -84,11 +112,15 @@ export async function createRedemptionTransaction(input: {
   points: number;
   notes?: string | null;
 }): Promise<LegacyTransactionRecord> {
-  const tenantId = getTenantId();
-  const staffId = getStaffId();
+  const tenantId = await getDefaultTenantId();
+  const staffId = input.cashierId ?? await getAuthenticatedStaffId();
   const idempotencyKey = uuidv4();
+  const pointsDeducted = Math.abs(input.points);
 
-  const { data, error } = await supabaseAdmin
+  const { before } = await getCustomerBalanceSnapshot(input.customerId);
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('points_ledger')
     .insert({
       tenant_id: tenantId,
@@ -96,7 +128,7 @@ export async function createRedemptionTransaction(input: {
       branch_id: null,
       staff_id: staffId,
       txn_type: 'redeem',
-      points: -Math.abs(input.points),
+      points: -pointsDeducted,
       currency: null,
       amount: null,
       reason: input.notes ?? null,
@@ -109,13 +141,14 @@ export async function createRedemptionTransaction(input: {
     throw new Error(`Failed to create redemption transaction: ${error.message}`);
   }
 
-  return toLegacyTransaction(data);
+  return toLegacyTransaction(data, before, Math.max(0, before - pointsDeducted));
 }
 
 export async function listTransactions(): Promise<LegacyTransactionRecord[]> {
-  const tenantId = getTenantId();
+  const tenantId = await getDefaultTenantId();
 
-  const { data, error } = await supabaseAdmin
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('points_ledger')
     .select('*')
     .eq('tenant_id', tenantId)
@@ -125,13 +158,14 @@ export async function listTransactions(): Promise<LegacyTransactionRecord[]> {
     throw new Error(`Failed to list transactions: ${error.message}`);
   }
 
-  return (data ?? []).map(toLegacyTransaction);
+  return (data ?? []).map((txn) => toLegacyTransaction(txn, 0, 0));
 }
 
 export async function getCustomerTransactions(customerId: string): Promise<LegacyTransactionRecord[]> {
-  const tenantId = getTenantId();
+  const tenantId = await getDefaultTenantId();
 
-  const { data, error } = await supabaseAdmin
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('points_ledger')
     .select('*')
     .eq('tenant_id', tenantId)
@@ -142,5 +176,13 @@ export async function getCustomerTransactions(customerId: string): Promise<Legac
     throw new Error(`Failed to get customer transactions: ${error.message}`);
   }
 
-  return (data ?? []).map(toLegacyTransaction);
+  // Rebuild running balance from the ordered ledger (oldest first for accuracy)
+  const rows = [...(data ?? [])].reverse();
+  let running = 0;
+  const mapped: LegacyTransactionRecord[] = rows.map((txn) => {
+    const before = running;
+    running = Math.max(0, running + txn.points);
+    return toLegacyTransaction(txn, before, running);
+  });
+  return mapped.reverse();
 }

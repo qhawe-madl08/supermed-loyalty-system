@@ -1,10 +1,7 @@
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createSupabaseServerClient } from '@/lib/auth';
 import type { CardRecord, LegacyCardRecord } from '@/types';
+import { getDefaultTenantId } from '@/lib/tenant-helper';
 import { v4 as uuidv4 } from 'uuid';
-
-function getTenantId(): string {
-  return process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID ?? '00000000-0000-0000-0000-000000000001';
-}
 
 function toLegacyCard(card: CardRecord): LegacyCardRecord {
   return {
@@ -50,15 +47,21 @@ function mapLegacyStatus(status: LegacyCardRecord['status']): CardRecord['status
   }
 }
 
-export async function registerCard(cardNumber: string): Promise<LegacyCardRecord> {
-  const tenantId = getTenantId();
+/**
+ * Issues a new loyalty card and immediately assigns it to a customer.
+ * Cards require an owner at creation time — the DB schema enforces customer_id NOT NULL.
+ */
+export async function issueCard(customerId: string, cardNumber?: string): Promise<LegacyCardRecord> {
+  const tenantId = await getDefaultTenantId();
+  const cardCode = cardNumber ?? uuidv4();
 
-  const { data, error } = await supabaseAdmin
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('loyalty_cards')
     .insert({
       tenant_id: tenantId,
-      customer_id: '00000000-0000-0000-0000-000000000000', // placeholder, will be updated on assign
-      card_code: cardNumber,
+      customer_id: customerId,
+      card_code: cardCode,
       card_type: 'qr',
       status: 'active',
     })
@@ -66,24 +69,17 @@ export async function registerCard(cardNumber: string): Promise<LegacyCardRecord
     .single();
 
   if (error) {
-    throw new Error(`Failed to register card: ${error.message}`);
+    throw new Error(`Failed to issue card: ${error.message}`);
   }
 
   return toLegacyCard(data);
 }
 
-export async function bulkRegisterCards(cardNumbers: string[]): Promise<LegacyCardRecord[]> {
-  const cards: LegacyCardRecord[] = [];
-  for (const cardNumber of cardNumbers) {
-    cards.push(await registerCard(cardNumber));
-  }
-  return cards;
-}
-
 export async function listCards(): Promise<LegacyCardRecord[]> {
-  const tenantId = getTenantId();
+  const tenantId = await getDefaultTenantId();
 
-  const { data, error } = await supabaseAdmin
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('loyalty_cards')
     .select('*')
     .eq('tenant_id', tenantId)
@@ -97,9 +93,26 @@ export async function listCards(): Promise<LegacyCardRecord[]> {
 }
 
 export async function assignCard(cardId: string, customerId: string): Promise<LegacyCardRecord> {
-  const tenantId = getTenantId();
+  const tenantId = await getDefaultTenantId();
 
-  const { data, error } = await supabaseAdmin
+  // Verify card is not already assigned to a different customer
+  const supabase = createSupabaseServerClient();
+  const { data: existing, error: lookupErr } = await supabase
+    .from('loyalty_cards')
+    .select('customer_id, status')
+    .eq('tenant_id', tenantId)
+    .eq('id', cardId)
+    .single();
+
+  if (lookupErr) {
+    throw new Error(`Card not found: ${lookupErr.message}`);
+  }
+
+  if (existing.customer_id && existing.customer_id !== customerId && existing.status === 'active') {
+    throw new Error('CARD_ALREADY_ASSIGNED');
+  }
+
+  const { data, error } = await supabase
     .from('loyalty_cards')
     .update({
       customer_id: customerId,
@@ -118,10 +131,11 @@ export async function assignCard(cardId: string, customerId: string): Promise<Le
 }
 
 export async function updateCardStatus(cardId: string, status: LegacyCardRecord['status']): Promise<LegacyCardRecord> {
-  const tenantId = getTenantId();
+  const tenantId = await getDefaultTenantId();
   const mappedStatus = mapLegacyStatus(status);
 
-  const { data, error } = await supabaseAdmin
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('loyalty_cards')
     .update({
       status: mappedStatus,

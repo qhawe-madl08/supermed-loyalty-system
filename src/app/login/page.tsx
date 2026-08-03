@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { authService, LoginCredentials } from '@/lib/auth-service';
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,16 +17,15 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    const credentials: LoginCredentials = {
-      email,
-      password,
-    };
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-    const result = await authService.login(credentials);
+    const result = await response.json();
 
-    if (result.success && result.user) {
-      // Store user in session storage (in production, use secure cookies)
-      sessionStorage.setItem('auth_user', JSON.stringify(result.user));
+    if (response.ok) {
       router.push('/dashboard');
     } else {
       setError(result.error || 'Login failed');

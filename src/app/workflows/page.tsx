@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { listCustomers } from '@/services/customer/customer.repository';
 import { formatCustomerName } from '@/lib/workflow';
@@ -45,7 +46,7 @@ export default async function WorkflowsPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold">Suggested next actions</h2>
             <ul className="mt-4 space-y-3 text-sm text-slate-600">
-              <li>Use the enrollment endpoint to add a new customer with an available card.</li>
+              <li>Enroll a new customer — a loyalty card is automatically issued on registration.</li>
               <li>Record a purchase to generate points and update the ledger.</li>
               <li>Redeem points when the customer is ready to claim a reward.</li>
             </ul>
@@ -56,9 +57,6 @@ export default async function WorkflowsPage() {
               <Link href="/workflows/transaction" className="rounded-full bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
                 Record transaction
               </Link>
-              <Link href="/api/v1/transactions" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-blue-500 hover:text-blue-600">
-                Open transactions API
-              </Link>
             </div>
           </section>
         </div>
@@ -66,3 +64,4 @@ export default async function WorkflowsPage() {
     </main>
   );
 }
+

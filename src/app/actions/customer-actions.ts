@@ -1,8 +1,8 @@
 'use server';
 
-import { createCustomer } from '@/services/customer/customer.repository.json';
-import { assignCard } from '@/services/cards/card.repository.json';
-import { ActionResult, success, duplicatePhoneError, cardAlreadyAssignedError, validationError, serverError } from '@/lib/action-response';
+import { createCustomer } from '@/services/customer/customer.repository';
+import { issueCard } from '@/services/cards/card.repository';
+import { ActionResult, success, duplicatePhoneError, serverError, validationError } from '@/lib/action-response';
 import type { LegacyCustomerRecord } from '@/types';
 
 export async function enrollCustomer(formData: FormData): Promise<ActionResult<LegacyCustomerRecord>> {
@@ -11,7 +11,6 @@ export async function enrollCustomer(formData: FormData): Promise<ActionResult<L
     const lastName = String(formData.get('last_name') ?? '').trim();
     const phone = String(formData.get('phone') ?? '').trim();
     const email = String(formData.get('email') ?? '').trim();
-    const cardId = String(formData.get('card_id') ?? '').trim();
 
     if (!firstName || !lastName || !phone) {
       return validationError<LegacyCustomerRecord>('First name, last name, and phone are required.');
@@ -22,19 +21,10 @@ export async function enrollCustomer(formData: FormData): Promise<ActionResult<L
       last_name: lastName,
       phone,
       email: email || null,
-      card_id: cardId || null,
     });
 
-    if (cardId) {
-      try {
-        await assignCard(cardId, customer.id);
-      } catch (error) {
-        if (error instanceof Error && error.message === 'CARD_ALREADY_ASSIGNED') {
-          return cardAlreadyAssignedError();
-        }
-        throw error;
-      }
-    }
+    // Issue a new loyalty card for every enrolled customer
+    await issueCard(customer.id);
 
     return success(customer);
   } catch (error) {

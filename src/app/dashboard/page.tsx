@@ -1,8 +1,9 @@
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
-import { listCustomers } from '@/services/customer/customer.repository.json';
-import { listTransactions } from '@/services/transactions/transaction.repository.json';
-import { listCards } from '@/services/cards/card.repository.json';
+import { listCustomers } from '@/services/customer/customer.repository';
+import { listTransactions } from '@/services/transactions/transaction.repository';
+import { listCards } from '@/services/cards/card.repository';
 import type { LegacyCustomerRecord, LegacyTransactionRecord } from '@/types';
 import { UserMenu } from '@/components/user-menu';
 
@@ -71,7 +72,7 @@ export default async function DashboardPage() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-2xl font-semibold text-slate-900 mb-2">Welcome back</h2>
-          <p className="text-slate-600">Here's what's happening with your loyalty program today.</p>
+          <p className="text-slate-600">Here&apos;s what&apos;s happening with your loyalty program today.</p>
           <p className="text-xs text-slate-400 mt-1">Last updated: {lastUpdated}</p>
         </div>
 
@@ -295,3 +296,4 @@ export default async function DashboardPage() {
     </main>
   );
 }
+
