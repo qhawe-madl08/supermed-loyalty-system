@@ -5,7 +5,7 @@ import { listCustomers } from '@/services/customer/customer.repository';
 import { listTransactions } from '@/services/transactions/transaction.repository';
 import { listCards } from '@/services/cards/card.repository';
 import type { LegacyCustomerRecord, LegacyTransactionRecord } from '@/types';
-import { UserMenu } from '@/components/user-menu';
+import { LogoutButton } from '@/components/logout-button';
 
 export default async function DashboardPage() {
   const customers = await listCustomers();
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
                   Record Transaction
                 </Link>
               </nav>
-              <UserMenu />
+              <LogoutButton />
             </div>
           </div>
         </div>
