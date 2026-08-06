@@ -1,7 +1,38 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getSession } from './auth';
 
 let cachedTenantId: string | null = null;
 
+/**
+ * Get the tenant_id from the authenticated user's JWT claims.
+ * This ensures RLS policies work correctly since they use auth_tenant_id().
+ */
+export async function getAuthenticatedTenantId(): Promise<string | null> {
+  const session = await getSession();
+  if (!session) {
+    return null;
+  }
+
+  const token = session.access_token;
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const payload = token.split('.')[1];
+    const decoded = Buffer.from(payload, 'base64').toString('utf-8');
+    const claims = JSON.parse(decoded);
+    return claims.tenant_id || null;
+  } catch (e) {
+    console.error('Failed to decode JWT for tenant_id:', e);
+    return null;
+  }
+}
+
+/**
+ * Get the default tenant_id for operations that don't have an authenticated context.
+ * This uses the service role client and should only be used in specific scenarios.
+ */
 export async function getDefaultTenantId(): Promise<string> {
   if (cachedTenantId) {
     return cachedTenantId;

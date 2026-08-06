@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from '@/lib/auth';
 import type { TransactionRecord, LegacyTransactionRecord } from '@/types';
 import { calculatePointsForPurchase } from '@/services/loyalty/points.service';
-import { getDefaultTenantId } from '@/lib/tenant-helper';
+import { getAuthenticatedTenantId, getDefaultTenantId } from '@/lib/tenant-helper';
 import { getUser } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -74,7 +74,10 @@ export async function createPurchaseTransaction(input: {
   multiplier: number;
   notes?: string | null;
 }): Promise<LegacyTransactionRecord> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId();
+  if (!tenantId) {
+    throw new Error('Authentication required: could not determine tenant_id from session');
+  }
   const staffId = input.cashierId ?? await getAuthenticatedStaffId();
   const pointsEarned = calculatePointsForPurchase(input.amountUsd, input.multiplier);
   const idempotencyKey = uuidv4();
@@ -112,7 +115,10 @@ export async function createRedemptionTransaction(input: {
   points: number;
   notes?: string | null;
 }): Promise<LegacyTransactionRecord> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId();
+  if (!tenantId) {
+    throw new Error('Authentication required: could not determine tenant_id from session');
+  }
   const staffId = input.cashierId ?? await getAuthenticatedStaffId();
   const idempotencyKey = uuidv4();
   const pointsDeducted = Math.abs(input.points);
@@ -145,7 +151,7 @@ export async function createRedemptionTransaction(input: {
 }
 
 export async function listTransactions(): Promise<LegacyTransactionRecord[]> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId() || await getDefaultTenantId();
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
@@ -162,7 +168,7 @@ export async function listTransactions(): Promise<LegacyTransactionRecord[]> {
 }
 
 export async function getCustomerTransactions(customerId: string): Promise<LegacyTransactionRecord[]> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId() || await getDefaultTenantId();
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase

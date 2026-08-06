@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/auth';
 import type { CustomerRecord, LegacyCustomerRecord } from '@/types';
-import { getDefaultTenantId } from '@/lib/tenant-helper';
+import { getAuthenticatedTenantId, getDefaultTenantId } from '@/lib/tenant-helper';
 
 function toLegacyCustomer(
   customer: CustomerRecord,
@@ -25,7 +25,10 @@ export async function createCustomer(input: {
   phone: string;
   email?: string | null;
 }): Promise<LegacyCustomerRecord> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId();
+  if (!tenantId) {
+    throw new Error('Authentication required: could not determine tenant_id from session');
+  }
   const fullName = `${input.first_name} ${input.last_name}`.trim();
 
   const supabase = createSupabaseServerClient();
@@ -53,7 +56,7 @@ export async function createCustomer(input: {
 }
 
 export async function listCustomers(): Promise<LegacyCustomerRecord[]> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId() || await getDefaultTenantId();
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
@@ -76,7 +79,7 @@ export async function listCustomers(): Promise<LegacyCustomerRecord[]> {
 }
 
 export async function findCustomerByPhone(phone: string): Promise<LegacyCustomerRecord | undefined> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId() || await getDefaultTenantId();
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
@@ -100,7 +103,7 @@ export async function findCustomerByPhone(phone: string): Promise<LegacyCustomer
 }
 
 export async function getCurrentCustomerBalance(customerId: string): Promise<number> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId() || await getDefaultTenantId();
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
@@ -121,7 +124,7 @@ export async function getCurrentCustomerBalance(customerId: string): Promise<num
 }
 
 export async function getCustomerById(customerId: string): Promise<LegacyCustomerRecord | null> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId() || await getDefaultTenantId();
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase

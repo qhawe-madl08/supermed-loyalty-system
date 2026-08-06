@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/auth';
 import type { CardRecord, LegacyCardRecord } from '@/types';
-import { getDefaultTenantId } from '@/lib/tenant-helper';
+import { getAuthenticatedTenantId, getDefaultTenantId } from '@/lib/tenant-helper';
 import { v4 as uuidv4 } from 'uuid';
 
 function toLegacyCard(card: CardRecord): LegacyCardRecord {
@@ -52,7 +52,10 @@ function mapLegacyStatus(status: LegacyCardRecord['status']): CardRecord['status
  * Cards require an owner at creation time — the DB schema enforces customer_id NOT NULL.
  */
 export async function issueCard(customerId: string, cardNumber?: string): Promise<LegacyCardRecord> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId();
+  if (!tenantId) {
+    throw new Error('Authentication required: could not determine tenant_id from session');
+  }
   const cardCode = cardNumber ?? uuidv4();
 
   const supabase = createSupabaseServerClient();
@@ -76,7 +79,7 @@ export async function issueCard(customerId: string, cardNumber?: string): Promis
 }
 
 export async function listCards(): Promise<LegacyCardRecord[]> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId() || await getDefaultTenantId();
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
@@ -93,7 +96,7 @@ export async function listCards(): Promise<LegacyCardRecord[]> {
 }
 
 export async function assignCard(cardId: string, customerId: string): Promise<LegacyCardRecord> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId() || await getDefaultTenantId();
 
   // Verify card is not already assigned to a different customer
   const supabase = createSupabaseServerClient();
@@ -131,7 +134,7 @@ export async function assignCard(cardId: string, customerId: string): Promise<Le
 }
 
 export async function updateCardStatus(cardId: string, status: LegacyCardRecord['status']): Promise<LegacyCardRecord> {
-  const tenantId = await getDefaultTenantId();
+  const tenantId = await getAuthenticatedTenantId() || await getDefaultTenantId();
   const mappedStatus = mapLegacyStatus(status);
 
   const supabase = createSupabaseServerClient();
