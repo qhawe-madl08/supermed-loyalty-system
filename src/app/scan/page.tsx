@@ -114,7 +114,7 @@ export default function ScanPage() {
       }
 
       if (result.status === 'available') {
-        router.push(`/workflows/enroll?card=${code}`);
+        router.push(`/card-onboarding?card=${code}`);
       } else if (result.status === 'active') {
         router.push(`/customers/${result.customer_id}`);
       } else if (result.status === 'lost') {
