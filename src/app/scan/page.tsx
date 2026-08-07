@@ -79,9 +79,17 @@ export default function ScanPage() {
       }
 
       if (result.status === 'available') {
-        router.push(`/customers/register?card=${code}`);
+        router.push(`/workflows/enroll?card=${code}`);
       } else if (result.status === 'active') {
         router.push(`/customers/${result.customer_id}`);
+      } else if (result.status === 'lost') {
+        setError('This card has been reported as lost. Please contact your manager.');
+      } else if (result.status === 'frozen') {
+        setError('This card is temporarily frozen. Please contact your manager.');
+      } else if (result.status === 'replaced') {
+        setError('This card has been replaced. Please contact your manager.');
+      } else if (result.status === 'revoked') {
+        setError('This card has been revoked. Please contact your manager.');
       } else {
         setError(`Card is ${result.status}. Please contact your manager.`);
       }

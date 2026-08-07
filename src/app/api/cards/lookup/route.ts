@@ -26,10 +26,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Return card status for decision engine
+    // Map LegacyCardRecord status to UI-friendly status
+    const statusMap: Record<string, string> = {
+      'AVAILABLE': 'available',
+      'ASSIGNED': 'active',
+      'LOST': 'lost',
+      'REPLACED': 'replaced',
+      'DISABLED': 'revoked',
+    };
+
     return NextResponse.json({
       id: card.id,
       card_number: card.card_number,
-      status: card.status,
+      status: statusMap[card.status] || card.status.toLowerCase(),
       customer_id: card.assigned_customer_id || null,
     });
   } catch (error) {

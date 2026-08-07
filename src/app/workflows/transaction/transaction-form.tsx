@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { recordTransaction } from '@/app/actions/transaction-actions';
@@ -10,34 +10,64 @@ import type { LegacyCustomerRecord, LegacyTransactionRecord } from '@/types';
 
 interface TransactionFormProps {
   customers: LegacyCustomerRecord[];
+  preselectedCustomer?: LegacyCustomerRecord | null;
+  transactionType?: string;
 }
 
-export function TransactionForm({ customers }: TransactionFormProps) {
+export function TransactionForm({ customers, preselectedCustomer, transactionType }: TransactionFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
-    customer_id: '',
-    transaction_type: 'PURCHASE' as 'PURCHASE' | 'REDEMPTION',
+    customer_id: preselectedCustomer?.id || '',
+    transaction_type: (transactionType === 'redemption' ? 'REDEMPTION' : 'PURCHASE') as 'PURCHASE' | 'REDEMPTION',
     amount: '',
     points: '',
     notes: '',
     idempotency_key: generateIdempotencyKey(),
   });
 
+  // Update transaction type if it changes from props
+  useEffect(() => {
+    if (transactionType) {
+      setFormData(prev => ({
+        ...prev,
+        transaction_type: transactionType === 'redemption' ? 'REDEMPTION' : 'PURCHASE'
+      }));
+    }
+  }, [transactionType]);
+
+  // Update customer_id if preselectedCustomer changes
+  useEffect(() => {
+    if (preselectedCustomer) {
+      setFormData(prev => ({
+        ...prev,
+        customer_id: preselectedCustomer.id
+      }));
+    }
+  }, [preselectedCustomer]);
+
+  const [successData, setSuccessData] = useState<LegacyTransactionRecord | null>(null);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+    setSuccessData(null);
 
     const formDataObj = new FormData(e.currentTarget);
     const result: ActionResult<LegacyTransactionRecord> = await recordTransaction(formDataObj);
 
     if (result.success) {
       setSuccess(true);
+      setSuccessData(result.data || null);
       setTimeout(() => {
-        router.push('/workflows');
-      }, 1500);
+        if (formData.customer_id) {
+          router.push(`/customers/${formData.customer_id}`);
+        } else {
+          router.push('/scan');
+        }
+      }, 2000);
     } else {
       setError(result.message || 'An error occurred');
     }
@@ -56,7 +86,16 @@ export function TransactionForm({ customers }: TransactionFormProps) {
           <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
             <span className="text-green-600">✓</span>
           </div>
-          <p className="text-sm font-medium text-green-800">Transaction recorded successfully! Redirecting...</p>
+          <div>
+            <p className="text-sm font-medium text-green-800">Transaction recorded successfully!</p>
+            {successData && (
+              <p className="text-xs text-green-700">
+                {successData.transaction_type === 'PURCHASE' 
+                  ? `+${successData.points} points earned` 
+                  : `${successData.points} points redeemed`}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
