@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Html5Qrcode } from 'html5-qrcode';
+import { BrowserMultiFormatReader } from '@zxing/browser';
 import Image from 'next/image';
 
 export default function ScanPage() {
@@ -11,13 +11,14 @@ export default function ScanPage() {
   const [error, setError] = useState<string | null>(null);
   const [cardCode, setCardCode] = useState<string>('');
   const [manualMode, setManualMode] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const readerElementId = 'reader';
+  const [scanSuccess, setScanSuccess] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(console.error);
+      if (readerRef.current) {
+        readerRef.current = null;
       }
     };
   }, []);
@@ -25,40 +26,69 @@ export default function ScanPage() {
   const startScanning = async () => {
     setError(null);
     setScanning(true);
+    setScanSuccess(false);
 
     try {
-      const html5QrCode = new Html5Qrcode(readerElementId);
-      scannerRef.current = html5QrCode;
+      if (!videoRef.current) {
+        throw new Error('Video element not found');
+      }
 
-      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        config,
-        (decodedText) => {
-          onScanSuccess(decodedText);
-        },
-        (errorMessage) => {
+      const reader = new BrowserMultiFormatReader();
+      readerRef.current = reader;
+
+      // Try to get the rear camera first
+      const videoInputDevices = await BrowserMultiFormatReader.listVideoInputDevices();
+      const rearCamera = videoInputDevices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('environment') ||
+        device.label.toLowerCase().includes('rear')
+      );
+
+      const selectedDeviceId = rearCamera ? rearCamera.deviceId : videoInputDevices[0]?.deviceId;
+
+      if (!selectedDeviceId) {
+        throw new Error('No camera available');
+      }
+
+      await reader.decodeFromVideoDevice(
+        selectedDeviceId,
+        videoRef.current,
+        (result, error) => {
+          if (result) {
+            onScanSuccess(result.getText());
+          }
           // Ignore scan errors during active scanning
         }
       );
     } catch (err) {
-      setError('Failed to start camera. Please check permissions.');
+      console.error('Camera error:', err);
+      setError('Failed to start camera. Please check permissions and try again.');
       setScanning(false);
     }
   };
 
   const stopScanning = async () => {
-    if (scannerRef.current) {
-      await scannerRef.current.stop();
-      scannerRef.current = null;
-    }
     setScanning(false);
+    // Reset the reader reference to stop scanning
+    readerRef.current = null;
   };
 
   const onScanSuccess = (decodedText: string) => {
+    if (scanSuccess) return; // Prevent duplicate scans
+
+    setScanSuccess(true);
     stopScanning();
     setCardCode(decodedText);
-    handleCardLookup(decodedText);
+    
+    // Vibrate on success if supported
+    if (navigator.vibrate) {
+      navigator.vibrate(200);
+    }
+
+    // Short delay to show success feedback
+    setTimeout(() => {
+      handleCardLookup(decodedText);
+    }, 500);
   };
 
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -74,7 +104,12 @@ export default function ScanPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result.error || 'Card lookup failed');
+        if (response.status === 404) {
+          setError('Card not recognized. This card is not registered in the Supermed system.');
+        } else {
+          setError(result.error || 'Card lookup failed');
+        }
+        setScanSuccess(false);
         return;
       }
 
@@ -84,17 +119,24 @@ export default function ScanPage() {
         router.push(`/customers/${result.customer_id}`);
       } else if (result.status === 'lost') {
         setError('This card has been reported as lost. Please contact your manager.');
+        setScanSuccess(false);
       } else if (result.status === 'frozen') {
         setError('This card is temporarily frozen. Please contact your manager.');
+        setScanSuccess(false);
       } else if (result.status === 'replaced') {
         setError('This card has been replaced. Please contact your manager.');
+        setScanSuccess(false);
       } else if (result.status === 'revoked') {
         setError('This card has been revoked. Please contact your manager.');
+        setScanSuccess(false);
       } else {
         setError(`Card is ${result.status}. Please contact your manager.`);
+        setScanSuccess(false);
       }
     } catch (err) {
+      console.error('Card lookup error:', err);
       setError('Network error. Please try again.');
+      setScanSuccess(false);
     }
   };
 
@@ -141,21 +183,44 @@ export default function ScanPage() {
             </div>
           )}
 
+          {scanSuccess && (
+            <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
+              <p className="text-sm font-medium text-green-800">Card detected: {cardCode}</p>
+            </div>
+          )}
+
           {!manualMode ? (
             <>
-              <div id={readerElementId} className="w-full bg-slate-100 rounded-lg overflow-hidden mb-6" style={{ minHeight: '300px' }}></div>
+              <div className="relative w-full bg-slate-900 rounded-lg overflow-hidden mb-6" style={{ minHeight: '300px' }}>
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  playsInline
+                  muted
+                />
+                {!scanning && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50">
+                    <p className="text-white text-sm">Camera stopped</p>
+                  </div>
+                )}
+                {scanning && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-48 h-48 border-4 border-white/50 rounded-lg" />
+                  </div>
+                )}
+              </div>
 
               {!scanning ? (
                 <button
                   onClick={startScanning}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-medium"
+                  className="w-full bg-blue-600 text-white py-4 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-medium text-lg"
                 >
                   Start Camera
                 </button>
               ) : (
                 <button
                   onClick={stopScanning}
-                  className="w-full bg-slate-600 text-white py-3 px-4 rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition font-medium"
+                  className="w-full bg-slate-600 text-white py-4 px-4 rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition font-medium text-lg"
                 >
                   Stop Camera
                 </button>
@@ -182,15 +247,15 @@ export default function ScanPage() {
                     type="text"
                     value={cardCode}
                     onChange={(e) => setCardCode(e.target.value)}
-                    placeholder="SM000025"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    placeholder="SM000001"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-lg"
                     autoFocus
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-medium"
+                  className="w-full bg-blue-600 text-white py-4 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-medium text-lg"
                 >
                   Look Up Card
                 </button>
