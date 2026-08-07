@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { Logo } from '@/components/logo';
+import { MobileNavigation } from '@/components/mobile-navigation';
 
 interface PageProps {
   searchParams: Promise<{ card: string }>;
@@ -57,25 +58,25 @@ export default function CardOnboardingPage({ searchParams }: PageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
-              <div className="relative w-10 h-10">
-                <Image
-                  src="/media/logo.png"
-                  alt="Supermed Pharmacy Logo"
-                  fill
-                  className="object-contain"
-                />
-              </div>
+              <Logo currentRole="cashier" size="md" />
               <div>
                 <h1 className="text-xl font-semibold text-slate-900">Supermed Loyalty</h1>
                 <p className="text-xs text-slate-500">Card Onboarding</p>
               </div>
             </div>
-            <button
-              onClick={handleCancel}
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-            >
-              Cancel
-            </button>
+            <div className="flex items-center gap-4">
+              {/* Desktop cancel button */}
+              <button
+                onClick={handleCancel}
+                className="hidden md:block text-sm font-medium text-slate-600 hover:text-slate-900 transition"
+              >
+                Cancel
+              </button>
+              {/* Mobile Navigation */}
+              <div className="md:hidden">
+                <MobileNavigation currentRole="cashier" />
+              </div>
+            </div>
           </div>
         </div>
       </header>

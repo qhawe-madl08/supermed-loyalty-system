@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import Link from 'next/link';
-import Image from 'next/image';
+import { Logo } from '@/components/logo';
+import { MobileNavigation } from '@/components/mobile-navigation';
 import { listCustomers } from '@/services/customer/customer.repository';
 import { listTransactions } from '@/services/transactions/transaction.repository';
 import { listCards } from '@/services/cards/card.repository';
@@ -37,21 +38,15 @@ export default async function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
-              <div className="relative w-10 h-10">
-                <Image
-                  src="/media/logo.png"
-                  alt="Supermed Pharmacy Logo"
-                  fill
-                  className="object-contain"
-                />
-              </div>
+              <Logo currentRole="admin" size="md" />
               <div>
                 <h1 className="text-xl font-semibold text-slate-900">Supermed Loyalty Platform</h1>
                 <p className="text-xs text-slate-500">Customer Loyalty Management</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <nav className="flex items-center gap-2">
+              {/* Desktop Navigation */}
+              <nav className="hidden md:flex items-center gap-2">
                 <Link href="/scan" className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition">
                   Scan Card
                 </Link>
@@ -65,7 +60,14 @@ export default async function DashboardPage() {
                   Record Transaction
                 </Link>
               </nav>
-              <LogoutButton />
+              {/* Mobile Navigation */}
+              <div className="md:hidden">
+                <MobileNavigation currentRole="admin" />
+              </div>
+              {/* Desktop Logout */}
+              <div className="hidden md:block">
+                <LogoutButton />
+              </div>
             </div>
           </div>
         </div>

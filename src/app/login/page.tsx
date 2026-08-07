@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { Logo } from '@/components/logo';
 
 
 export default function LoginPage() {
@@ -51,13 +51,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
         <div className="text-center mb-8">
-          <div className="relative w-20 h-20 mx-auto mb-4">
-            <Image
-              src="/media/logo.png"
-              alt="Supermed Pharmacy Logo"
-              fill
-              className="object-contain"
-            />
+          <div className="flex justify-center mb-4">
+            <Logo size="lg" />
           </div>
           <h1 className="text-3xl font-bold text-blue-900 mb-2">Supermed Pharmacy</h1>
           <p className="text-gray-600">Staff Portal Login</p>

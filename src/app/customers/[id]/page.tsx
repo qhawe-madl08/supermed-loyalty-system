@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import { Logo } from '@/components/logo';
+import { MobileNavigation } from '@/components/mobile-navigation';
 
 interface CustomerData {
   id: string;
@@ -111,21 +112,21 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               >
                 ← Back
               </button>
-              <div className="relative w-8 h-8">
-                <Image
-                  src="/media/logo.png"
-                  alt="Supermed Logo"
-                  fill
-                  className="object-contain"
-                />
+              <Logo currentRole="cashier" size="sm" />
+            </div>
+            <div className="flex items-center gap-4">
+              {/* Desktop scan button */}
+              <Link
+                href="/scan"
+                className="hidden md:block text-sm font-medium text-slate-600 hover:text-slate-900 transition"
+              >
+                Scan Card
+              </Link>
+              {/* Mobile Navigation */}
+              <div className="md:hidden">
+                <MobileNavigation currentRole="cashier" />
               </div>
             </div>
-            <Link
-              href="/scan"
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-            >
-              Scan Card
-            </Link>
           </div>
         </div>
       </header>
