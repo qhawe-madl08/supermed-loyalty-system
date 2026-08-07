@@ -7,7 +7,11 @@ import { enrollCustomer } from '@/app/actions/customer-actions';
 import { ActionResult } from '@/lib/action-response';
 import type { LegacyCustomerRecord } from '@/types';
 
-export function EnrollCustomerForm() {
+interface EnrollCustomerFormProps {
+  cardCode?: string;
+}
+
+export function EnrollCustomerForm({ cardCode }: EnrollCustomerFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -24,12 +28,15 @@ export function EnrollCustomerForm() {
     setSuccess(false);
 
     const formDataObj = new FormData(e.currentTarget);
+    if (cardCode) {
+      formDataObj.append('card_code', cardCode);
+    }
     const result: ActionResult<LegacyCustomerRecord> = await enrollCustomer(formDataObj);
 
     if (result.success) {
       setSuccess(true);
       setTimeout(() => {
-        router.push('/workflows');
+        router.push('/scan');
       }, 1500);
     } else {
       setError(result.message || 'An error occurred');
@@ -42,12 +49,25 @@ export function EnrollCustomerForm() {
 
   return (
     <>
+      {cardCode && (
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <p className="text-sm font-medium text-blue-900">
+            Scanned Card: <span className="font-mono">{cardCode}</span>
+          </p>
+          <p className="text-xs text-blue-700 mt-1">
+            This card will be assigned to the customer upon registration.
+          </p>
+        </div>
+      )}
+
       {success && (
         <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
           <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
             <span className="text-green-600">✓</span>
           </div>
-          <p className="text-sm font-medium text-green-800">Customer enrolled and loyalty card issued. Redirecting...</p>
+          <p className="text-sm font-medium text-green-800">
+            {cardCode ? 'Customer registered and card assigned.' : 'Customer enrolled and loyalty card issued.'} Redirecting...
+          </p>
         </div>
       )}
 

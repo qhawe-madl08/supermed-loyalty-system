@@ -35,10 +35,10 @@ export interface LegacyCustomerRecord {
 export interface CardRecord {
   id: string;
   tenant_id: string;
-  customer_id: string;
+  customer_id: string | null;
   card_code: string;
   card_type: 'qr' | 'barcode' | 'virtual';
-  status: 'active' | 'lost' | 'frozen' | 'replaced' | 'revoked';
+  status: 'available' | 'active' | 'lost' | 'frozen' | 'replaced' | 'revoked';
   issued_at: string;
   replaced_from_card_id: string | null;
   created_at: string;

@@ -52,13 +52,16 @@ export default async function DashboardPage() {
             </div>
             <div className="flex items-center gap-4">
               <nav className="flex items-center gap-2">
+                <Link href="/scan" className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition">
+                  Scan Card
+                </Link>
                 <Link href="/workflows" className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
                   Workflows
                 </Link>
                 <Link href="/workflows/customers" className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
                   Customers
                 </Link>
-                <Link href="/workflows/transaction" className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition">
+                <Link href="/workflows/transaction" className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
                   Record Transaction
                 </Link>
               </nav>
