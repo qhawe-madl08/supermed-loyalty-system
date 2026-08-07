@@ -33,6 +33,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'profile' | 'history'>('profile');
   const [customerId, setCustomerId] = useState<string>('');
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
 
   useEffect(() => {
     params.then(p => setCustomerId(p.id));
@@ -176,6 +177,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           >
             View History
           </button>
+          <button
+            onClick={() => setShowArchiveDialog(true)}
+            className="w-full bg-red-100 text-red-700 py-4 px-6 rounded-xl hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 transition font-medium text-lg"
+          >
+            Archive Customer
+          </button>
         </div>
 
         {/* Recent Activity */}
@@ -271,6 +278,47 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Archive Confirmation Dialog */}
+        {showArchiveDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">Archive Customer</h3>
+              <p className="text-slate-600 mb-4">
+                This customer will be archived. Transaction history will remain available.
+                They will not be able to earn points or redeem rewards until restored.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowArchiveDialog(false)}
+                  className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/customers/${customerId}/archive`, {
+                        method: 'POST',
+                      });
+                      if (response.ok) {
+                        router.push('/scan');
+                      } else {
+                        const result = await response.json();
+                        alert(result.error || 'Failed to archive customer');
+                      }
+                    } catch (err) {
+                      alert('Failed to archive customer');
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
+                >
+                  Archive
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

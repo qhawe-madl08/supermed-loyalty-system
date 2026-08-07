@@ -64,6 +64,7 @@ export async function listCustomers(): Promise<LegacyCustomerRecord[]> {
     .select('*, loyalty_cards!loyalty_cards_customer_id_fkey(id, status)')
     .eq('tenant_id', tenantId)
     .eq('is_active', true)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -88,6 +89,7 @@ export async function findCustomerByPhone(phone: string): Promise<LegacyCustomer
     .eq('tenant_id', tenantId)
     .eq('phone_e164', phone)
     .eq('is_active', true)
+    .is('deleted_at', null)
     .maybeSingle();
 
   if (error) {
@@ -132,6 +134,7 @@ export async function getCustomerById(customerId: string): Promise<LegacyCustome
     .select('*, loyalty_cards!loyalty_cards_customer_id_fkey(id, status)')
     .eq('tenant_id', tenantId)
     .eq('id', customerId)
+    .is('deleted_at', null)
     .maybeSingle();
 
   if (error) {
