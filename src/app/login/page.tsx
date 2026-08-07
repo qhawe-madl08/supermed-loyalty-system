@@ -33,7 +33,13 @@ export default function LoginPage() {
     const result = await response.json();
 
     if (response.ok) {
-      router.push('/dashboard');
+      // Role-aware landing: cashier → scan, others → dashboard
+      const role = result.role;
+      if (role === 'cashier') {
+        router.push('/scan');
+      } else {
+        router.push('/dashboard');
+      }
     } else {
       setError(result.error || 'Login failed');
     }

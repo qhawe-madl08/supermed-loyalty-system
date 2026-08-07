@@ -27,7 +27,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    // Get JWT claims to extract role
+    const token = data.session?.access_token;
+    let staffRole = null;
+    if (token) {
+      try {
+        const payload = token.split('.')[1];
+        const decoded = Buffer.from(payload, 'base64').toString('utf-8');
+        const jwtClaims = JSON.parse(decoded);
+        staffRole = jwtClaims.staff_role || null;
+      } catch (e) {
+        console.error('Failed to decode JWT:', e);
+      }
+    }
+
+    return NextResponse.json({ 
+      success: true,
+      role: staffRole
+    });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
