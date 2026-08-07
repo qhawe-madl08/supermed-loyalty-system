@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { logAuthEvent } from '@/services/audit/audit.service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,11 +22,15 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
+      await logAuthEvent('failed_login', undefined, { email, error: error.message }, 'failure');
       return NextResponse.json(
         { error: error.message },
         { status: 401 }
       );
     }
+
+    // Audit successful login
+    await logAuthEvent('login', data.user.id, { email });
 
     // Get JWT claims to extract role
     const token = data.session?.access_token;

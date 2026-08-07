@@ -30,6 +30,48 @@ export async function getAuthenticatedTenantId(): Promise<string | null> {
 }
 
 /**
+ * Get the staff_id from the authenticated user's JWT claims.
+ */
+export async function getAuthenticatedStaffId(): Promise<string | null> {
+  const session = await getSession();
+  if (!session) {
+    return null;
+  }
+
+  const user = session.user;
+  if (!user) {
+    return null;
+  }
+
+  return user.id || null;
+}
+
+/**
+ * Get the branch_id from the authenticated user's JWT claims.
+ */
+export async function getAuthenticatedBranchId(): Promise<string | null> {
+  const session = await getSession();
+  if (!session) {
+    return null;
+  }
+
+  const token = session.access_token;
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const payload = token.split('.')[1];
+    const decoded = Buffer.from(payload, 'base64').toString('utf-8');
+    const claims = JSON.parse(decoded);
+    return claims.branch_id || null;
+  } catch (e) {
+    console.error('Failed to decode JWT for branch_id:', e);
+    return null;
+  }
+}
+
+/**
  * Get the default tenant_id for operations that don't have an authenticated context.
  * This uses the service role client and should only be used in specific scenarios.
  */

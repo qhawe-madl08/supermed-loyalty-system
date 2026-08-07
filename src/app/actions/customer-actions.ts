@@ -3,6 +3,7 @@
 import { createCustomer } from '@/services/customer/customer.repository';
 import { issueCard, assignAvailableCard, findCardByCode } from '@/services/cards/card.repository';
 import { ActionResult, success, duplicatePhoneError, serverError, validationError } from '@/lib/action-response';
+import { logCustomerEvent, logCardEvent } from '@/services/audit/audit.service';
 import type { LegacyCustomerRecord } from '@/types';
 
 export async function enrollCustomer(formData: FormData): Promise<ActionResult<LegacyCustomerRecord>> {
@@ -28,6 +29,14 @@ export async function enrollCustomer(formData: FormData): Promise<ActionResult<L
 
     createdCustomerId = customer.id;
 
+    // Audit customer creation
+    await logCustomerEvent('created', customer.id, undefined, {
+      first_name: customer.first_name,
+      last_name: customer.last_name,
+      phone: customer.phone,
+      email: customer.email,
+    });
+
     // Handle card assignment
     if (cardCode) {
       // Scan-first workflow: assign existing available card
@@ -38,10 +47,22 @@ export async function enrollCustomer(formData: FormData): Promise<ActionResult<L
       if (card.status !== 'AVAILABLE') {
         return serverError('Card is not available for assignment.');
       }
-      await assignAvailableCard(card.id, customer.id);
+      const updatedCard = await assignAvailableCard(card.id, customer.id);
+      
+      // Audit card assignment
+      await logCardEvent('assigned', updatedCard.id, 
+        { status: 'AVAILABLE', customer_id: null },
+        { status: 'ASSIGNED', customer_id: customer.id }
+      );
     } else {
       // Legacy workflow: create new card
-      await issueCard(customer.id);
+      const newCard = await issueCard(customer.id);
+      
+      // Audit card creation
+      await logCardEvent('assigned', newCard.id,
+        { status: null, customer_id: null },
+        { status: 'ASSIGNED', customer_id: customer.id }
+      );
     }
 
     return success(customer);

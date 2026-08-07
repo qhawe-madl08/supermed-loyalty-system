@@ -5,6 +5,7 @@ import { createPurchaseTransaction, createRedemptionTransaction } from '@/servic
 import { getCurrentCustomerBalance } from '@/services/customer/customer.repository';
 import { ActionResult, success, insufficientPointsError, customerNotFoundError, validationError, serverError } from '@/lib/action-response';
 import { checkIdempotency, recordIdempotency, generateIdempotencyKey } from '@/services/idempotency/idempotency.repository';
+import { logTransactionEvent } from '@/services/audit/audit.service';
 import type { LegacyTransactionRecord } from '@/types';
 
 export async function recordTransaction(formData: FormData): Promise<ActionResult<LegacyTransactionRecord>> {
@@ -41,6 +42,17 @@ export async function recordTransaction(formData: FormData): Promise<ActionResul
         multiplier: settings.points_multiplier,
         notes: notes || null,
       });
+      
+      // Audit purchase transaction
+      await logTransactionEvent('purchase', transaction.id,
+        { balance_before: transaction.balance_before },
+        { 
+          balance_after: transaction.balance_after,
+          points: transaction.points,
+          amount: transaction.purchase_amount,
+        }
+      );
+      
       result = success(transaction);
     } else if (type === 'REDEMPTION') {
       const points = parseInt(pointsStr, 10);
@@ -58,6 +70,16 @@ export async function recordTransaction(formData: FormData): Promise<ActionResul
         points,
         notes: notes || null,
       });
+      
+      // Audit redemption transaction
+      await logTransactionEvent('redemption', transaction.id,
+        { balance_before: transaction.balance_before },
+        {
+          balance_after: transaction.balance_after,
+          points: transaction.points,
+        }
+      );
+      
       result = success(transaction);
     } else {
       return validationError<LegacyTransactionRecord>('Invalid transaction type.');
